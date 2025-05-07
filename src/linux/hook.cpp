@@ -15,7 +15,7 @@
  */
 void __cdecl hook_Com_Init(char* cmdline) {
 
-    Com_Printf("CMD: '%s'\n", cmdline);
+    Com_Printf("Command line: '%s'\n", cmdline);
     
     server_init();
 

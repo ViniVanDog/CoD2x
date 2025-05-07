@@ -6,10 +6,22 @@
 #define com_consoleLines ((char**)ADDR(0x00c26110, 0x081a21e0))
 #define com_numConsoleLines (*(int*)ADDR(0x00c27280, 0x081a21d4))
 
+char common_commandLine[1024] = {0};
+
 void Com_ParseCommandLine( char *commandLine )
 {
-	bool inq = 0;
-	com_numConsoleLines = 0;
+    bool inq = 0;
+    com_numConsoleLines = 0;
+
+    // CoD2x: Copy command line to local buffer
+    if (strlen(commandLine) >= sizeof(common_commandLine)) {
+        Com_Error(ERR_DROP, "Command line too long: %s", commandLine);
+        return;
+    }
+    strncpy(common_commandLine, commandLine, sizeof(common_commandLine) - 1);
+    common_commandLine[sizeof(common_commandLine) - 1] = '\0'; // Ensure null termination
+    commandLine = common_commandLine;
+    // CoD2x: End
 
     // CoD2x: Check if whole string is in quotes and remove them
     if (commandLine[0] == '"' && commandLine[strlen(commandLine) - 1] == '"') {
@@ -97,6 +109,19 @@ void common_fix_clip_bug(bool enable) {
 
 
 void common_init() {
+    Com_Printf("-----------------------------------\n");
+    Com_Printf("Command line: ");
+    for (int i = 0; i < com_numConsoleLines; i++) {
+        if (i > 0) {
+            Com_Printf(", ");
+        }
+        Com_Printf("'%s'", com_consoleLines[i]);
+    }
+    if (com_numConsoleLines == 0) {
+        Com_Printf("''");
+    }
+    Com_Printf("\n");
+    
     Com_Printf("-----------------------------------\n");
     Com_Printf("CoD2x " APP_VERSION " loaded\n");
     Com_Printf("-----------------------------------\n");

@@ -68,7 +68,7 @@ int __cdecl hook_gfxDll() {
  */
 void __cdecl hook_Com_Init(char* cmdline) {
 
-    Com_Printf("CMD: '%s'\n", cmdline);
+    Com_Printf("Command line: '%s'\n", cmdline);
 
     // Client side
     exception_init();
