@@ -87,26 +87,6 @@ void Com_ParseCommandLine_Win32() {
 }
 
 
-// Fix animation time from crouch to stand
-// Need to be fixed both on client and server
-// This function is called when g_cod2x cvar is changed on client side or always on server side
-// https://github.com/voron00/CoD2rev_Server/blob/e788f339977d1d28980333fd0c0f18e40eafbc13/src/bgame/bg_animation_mp.cpp#L1717
-void common_fix_clip_bug(bool enable) {
-
-    // 1st view
-    // prone to crouch  = 400ms
-    // crouch to prone  = 400 total, 200ms first part going down
-    // crouch to stand  = 200ms
-    // stand to crouch  = 200ms
-
-    if (enable) {
-        patch_copy(ADDR(0x004f9956, 0x080d9e7a), (void*)"\x90\x90\x90\x90\x90\x90", 6); // 0ms
-    } else {
-        patch_copy(ADDR(0x004f9956, 0x080d9e7a), (void*)"\x81\xc2\x90\x01\x00\x00", 6); // 400ms original
-    }
-    
-}
-
 
 void common_init() {
     Com_Printf("-----------------------------------\n");

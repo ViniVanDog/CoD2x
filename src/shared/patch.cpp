@@ -31,7 +31,7 @@ typedef enum {
  * @param length The number of bytes to modify.
  * @param action The type of patch action to perform.
  */
-void patch_memory(unsigned int targetAddress, const void* source, unsigned int length, PatchAction action) {
+void patch_memory(unsigned int targetAddress, const void* source, unsigned int length, PatchAction action, void* returnValue = NULL) {
 
     #if COD2X_WIN32
     DWORD oldProtection;
@@ -54,6 +54,13 @@ void patch_memory(unsigned int targetAddress, const void* source, unsigned int l
             break;
         case PATCH_ACTION_CALL:
         case PATCH_ACTION_JUMP: {
+            // If a return value pointer is provided, store the original target address.
+            if (returnValue != NULL) {
+                int originalRelativeOffset;
+                memcpy(&originalRelativeOffset, (void*)(targetAddress + 1), 4);
+                unsigned int originalTarget = (unsigned int)(targetAddress + 5 + originalRelativeOffset);
+                *(unsigned int*)returnValue = originalTarget;
+            }
             unsigned char opcode = (action == PATCH_ACTION_CALL) ? 0xE8 : 0xE9;
             *(unsigned char*)targetAddress = opcode;
             int relativeOffset = *(unsigned int*)source - (targetAddress + 5);
@@ -65,6 +72,10 @@ void patch_memory(unsigned int targetAddress, const void* source, unsigned int l
             memcpy((void*)(targetAddress + 1), &source, sizeof(source));
             break;
         case PATCH_ACTION_NOP:
+            if (returnValue != NULL) {
+                // Store the original bytes before patching with NOPs
+                memcpy(returnValue, (void*)targetAddress, length);
+            }
             memset((void*)targetAddress, 0x90, length);
             break;
     }
@@ -130,27 +141,33 @@ void patch_string_ptr(unsigned int targetAddress, const char * value) {
 /**
  * Modifies the memory at a given address to insert a relative call to a new location.
  * It will replace 5 bytes.
+ * Returns the original target address before the patch.
  * 
  * Example:
  *  patch_call(0x400000, 0x500000);
  *  0x400000:  e8 88 87 ee ff  call    sub_466460       // before
  *  0x400000:  e8 xx xx xx xx  call    newFunction      // after
  */
-void patch_call(unsigned int targetAddress, unsigned int destinationAddress) {
-    patch_memory(targetAddress, &destinationAddress, 5, PATCH_ACTION_CALL);
+void* patch_call(unsigned int targetAddress, unsigned int destinationAddress) {
+    void* returnValue = NULL;
+    patch_memory(targetAddress, &destinationAddress, 5, PATCH_ACTION_CALL, &returnValue);
+    return returnValue;
 }
 
 /**
  * Modifies the memory at a given address to insert an unconditional jump (JMP) to a new location.
  * It will replace 5 bytes.
+ * Returns the original target address before the patch.
  * 
  * Example:
  *  patch_jump(0x400000, 0x500000);
  *  0x400000:  e9 f8 7f ee ff  jmp    sub_466460       // before
  *  0x400000:  e9 xx xx xx xx  jmp    newFunction      // after
  */
-void patch_jump(unsigned int targetAddress, unsigned int destinationAddress) {
-    patch_memory(targetAddress, &destinationAddress, 5, PATCH_ACTION_JUMP);
+void* patch_jump(unsigned int targetAddress, unsigned int destinationAddress) {
+    void* returnValue = NULL;
+    patch_memory(targetAddress, &destinationAddress, 5, PATCH_ACTION_JUMP, &returnValue);
+    return returnValue;
 }
 
 /**
@@ -163,6 +180,6 @@ void patch_jump(unsigned int targetAddress, unsigned int destinationAddress) {
  *  0x400000:  00 00 00 00 00         // before
  *  0x400000:  90 90 00 00 00         // after
  */
-void patch_nop(unsigned int startAddress, unsigned int length) {
-    patch_memory(startAddress, NULL, length, PATCH_ACTION_NOP);
+void patch_nop(unsigned int startAddress, unsigned int length, void* originalBytes) {
+    patch_memory(startAddress, NULL, length, PATCH_ACTION_NOP, originalBytes);
 }

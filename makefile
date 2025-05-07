@@ -25,16 +25,16 @@ VERSION_MINOR = 4
 # Should be increased only if the changed functionalities that affect both server and client
 # Newer client can connect older server
 # Older client can not connect newer server
-VERSION_PROTOCOL = 2
+VERSION_PROTOCOL = 3
 
 # CoD2x patch version
 # Should be increased when new version is released and the changes are backward compatible
-VERSION_PATCH = 4
+VERSION_PATCH = 1
 
 # CoD2x test version
 # Should be increased when new version is released and the changes are backward compatible
 VERSION_TEST = -test.1
-VERSION_IS_TEST = 1
+VERSION_IS_TEST = 0
 
 # Full version string
 # Example "1.4.1.1"  or  "1.4.1.1-test.1"
@@ -100,11 +100,12 @@ LINUX_OBJECTS = $(patsubst $(LINUX_SRC_DIR)/%.cpp, $(LINUX_OBJ_DIR)/%.o, $(LINUX
 # ========================================================================================================
 
 # Compilation flags
-CFLAGS = -Wall -Wextra -Wno-unused-parameter -g -m32 -lstdc++ -O0
+CFLAGS = -Wall -Wextra -Wno-unused-parameter -Wno-address-of-packed-member -g -m32 -lstdc++ -O0
 # Flag explanations:
 # -Wall: Enable all compiler warnings
 # -Wextra: Enable extra compiler warnings
 # -Wno-unused-parameter: Disable warnings for unused function parameters
+# -Wno-address-of-packed-member: Disable warnings for address of packed structures
 # -g: Include debugging information
 # -m32: Generate 32-bit code
 # -shared: Create a shared library (windows: DLL, linux: SO)
@@ -124,7 +125,7 @@ WIN_AS = nasm
 WIN_CFLAGS = $(CFLAGS) $(DEBUG_FLAG) $(DEVELOPER_FLAG) -mwindows -static
 WIN_LFLAGS = -shared -m32
 WIN_ASFLAGS = -f win32	# Output format for NASM (32-bit Windows)
-WIN_LIBS = -lkernel32 -lwininet -static-libgcc -static-libstdc++ -ldbghelp -lole32 -loleaut32 -luuid
+WIN_LIBS = -lkernel32 -lwininet -static-libgcc -static-libstdc++ -lstdc++ -ldbghelp -lole32 -loleaut32 -luuid
 # -mwindows: Link with the Windows GUI subsystem (no console)
 # -static: Link libraries statically
 

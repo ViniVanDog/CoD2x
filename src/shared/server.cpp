@@ -1,7 +1,7 @@
 #include "server.h"
 
 #include "shared.h"
-#include "common.h"
+#include "animation.h"
 #if COD2X_WIN32
 #include "../mss32/updater.h"
 #endif
@@ -737,7 +737,7 @@ void SV_ClientBegin_Linux(int clientNum) {
 void SV_SpawnServer(char* mapname) {
 
     // Fix animation time from crouch to stand
-    common_fix_clip_bug(true);
+    animation_changeFix(true);
 
     // Call the original function
     ((void (*)(char* mapname))ADDR(0x00458a40, 0x08093520))(mapname);

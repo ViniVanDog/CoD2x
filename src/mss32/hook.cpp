@@ -17,6 +17,7 @@
 #include "../shared/common.h"
 #include "../shared/server.h"
 #include "../shared/game.h"
+#include "../shared/animation.h"
 
 HMODULE hModule;
 unsigned int gfx_module_addr;
@@ -107,22 +108,7 @@ void __cdecl hook_Com_Init(char* cmdline) {
     common_init();
     updater_init(); // depends on dedicated
     game_init();
-
-}
-
-
-/**
- * Com_Frame
- * Is called in the main loop every frame.
- */
-void __cdecl hook_Com_Frame() {
-
-    freeze_frame();
-    fps_frame();
-    game_frame();
-
-    // Call the original function
-	((void (__cdecl *)())0x00434f70)();
+    animation_init();
 }
 
 
@@ -160,6 +146,7 @@ bool hook_patch() {
     common_patch();
     server_patch();
     game_patch();
+    animation_patch();
 
     
     // Patch black screen / long loading on game startup
