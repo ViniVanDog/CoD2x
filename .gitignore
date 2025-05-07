@@ -1,19 +1,37 @@
+
+# Ignore migw files
 tools/mingw/**
+
+# Ignore compiled files folder
 obj
 
-# Folders in CoD2 folder
-bin/windows/servercache.dat
-bin/windows/hunkusage.dat
-bin/windows/*.lnk
+# Ignore all files in CoD2 windows folder except for certain files
+bin/windows/*
+!bin/windows/cod.bmp
+!bin/windows/CoD2MP_s.exe
+!bin/windows/CoD2MP_s.exe.bndb
+!bin/windows/cod2patch.ini
+!bin/windows/CoD2SP_s.exe
+!bin/windows/codlogo.bmp
+!bin/windows/gfx_d3d_mp_x86_s.dll
+!bin/windows/gfx_d3d_mp_x86_s.dll.bndb
+!bin/windows/gfx_d3d_x86_s.dll
+!bin/windows/localization.txt
+!bin/windows/mss32_original.dll
+!bin/windows/mss32.dll
+!bin/windows/version.inf
+
+# Ignore all folders in CoD2 windows folder except for main, miles, and pb
 bin/windows/*/
-!bin/windows/main/players
+!bin/windows/main
 !bin/windows/miles/
 !bin/windows/pb/
 
-# Files in main folder
-bin/windows/main/hunkusage.dat
-bin/windows/main/*.iwd
-bin/windows/main/*.log
-bin/windows/main/players/default/config_mp.cfg
+# Ignore all files in main folder except for certain files
+bin/windows/main/*
+!bin/windows/main/launch_*.cfg
 
-bin/windows/CoD2MP_s server.bat
+# Ignore all folders in main folder except for players
+bin/windows/main/*/
+!bin/windows/main/players
+bin/windows/main/players/default/config_mp.cfg

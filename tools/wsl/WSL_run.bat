@@ -18,6 +18,13 @@ wsl bash -c "cp -rv \"%WSLPATH%/bin/linux/libCoD2x.so\" ~/CoD2x/"
 :: Check if ~/CoD2x/main exists; if not, create it and copy files from the Windows "main" directory
 wsl bash -c "if [ ! -d ~/CoD2x/main ]; then echo 'Directory ~/CoD2x/main does not exist, copying...'; mkdir -p ~/CoD2x/main && cp -ru \"%WSLPATH%/bin/windows/main\"/* ~/CoD2x/main && echo 'Files copied successfully.'; else echo 'Directory ~/CoD2x/main already exists, skipping.'; fi"
 
+:: Sync .IWD files, so the content is the same, (copy only if they differ or do not exist)
+echo Synchronizing files from %WSLPATH%/bin/windows/main/ to ~/CoD2x/main/...
+wsl bash -c "rsync -av --delete --include='*.iwd' --exclude='*' \"%WSLPATH%/bin/windows/main/\" ~/CoD2x/main/"
+
+:: Update launch_args_linux.cfg
+wsl bash -c "cp -v \"%WSLPATH%/bin/windows/main/launch_args_linux.cfg\" ~/CoD2x/main/"
+
 :: Update config_mp.cfg by coping the Windows config_mp.cfg to the WSL directory
 echo Updating config_mp.cfg...
 wsl bash -c "cp -v \"%WSLPATH%/bin/windows/main/players/default/config_mp.cfg\" ~/CoD2x/main/players/default/"
