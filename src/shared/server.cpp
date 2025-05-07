@@ -840,4 +840,11 @@ void server_patch()
     #if COD2X_LINUX
         patch_nop(0x080efe12, 5); // remove call to PM_SendEmtpyOffhandEvent
     #endif
+
+
+	// Disable "Giving %s a 999 ping - !count:" message
+	patch_nop(ADDR(0x0045bf59, 0x080964df), 5);
+
+	// Disable "^3WARNING: Non-localized %s string is not allowed to have letters in it. Must be changed over to a localized string: %s"
+	patch_nop(ADDR(0x00504990, 0x0811098e), 5);
 }
