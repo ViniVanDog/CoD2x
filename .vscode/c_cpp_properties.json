@@ -4,6 +4,7 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/tools/mingw/i686-w64-mingw32/include",
+                "${workspaceFolder}/src/shared",
                 "${workspaceFolder}/src/mss32"
             ],
             "defines": ["_WIN32=1", "DEBUG=1", "DEVELOPER=\"${env:COMPUTERNAME}_${env:USERNAME}\""],
@@ -19,13 +20,22 @@
                 "-lstdc++",
                 "-mwindows",
                 "-static"
-            ]
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/tools/mingw/i686-w64-mingw32/include",
+                    "${workspaceFolder}/src/shared",
+                    "${workspaceFolder}/src/mss32"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
         },
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/src/mss32",
-                "${workspaceFolder}/tools/linux_include"
+                "${workspaceFolder}/tools/linux_include",
+                "${workspaceFolder}/src/shared",
+                "${workspaceFolder}/src/linux"
             ],
             "defines": ["_WIN32=0", "DEBUG=1", "DEVELOPER=\"${env:COMPUTERNAME}_${env:USERNAME}\""],
             "compilerPath": "${workspaceFolder}/tools/mingw/bin/gcc.exe",
@@ -39,7 +49,15 @@
                 "-m32",
                 "-lstdc++",
                 "-fPIC"
-            ]
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/tools/linux_include",
+                    "${workspaceFolder}/src/shared",
+                    "${workspaceFolder}/src/linux"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
         }
     ],
     "version": 4
