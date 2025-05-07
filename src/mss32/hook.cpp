@@ -10,16 +10,31 @@
 #include "window.h"
 #include "rinput.h"
 #include "fps.h"
-#include "game.h"
+#include "cgame.h"
 #include "updater.h"
 #include "hwid.h"
 #include "master_server.h"
 #include "../shared/common.h"
 #include "../shared/server.h"
-
+#include "../shared/game.h"
 
 HMODULE hModule;
 unsigned int gfx_module_addr;
+
+
+/**
+ * Com_Frame
+ * Is called in the main loop every frame.
+ */
+void __cdecl hook_Com_Frame() 
+{
+    freeze_frame();
+    fps_frame();
+    cgame_frame();
+
+    // Call the original function
+	((void (__cdecl *)())0x00434f70)();
+}
 
 
 /**
@@ -60,7 +75,7 @@ void __cdecl hook_Com_Init(char* cmdline) {
     window_init();
     rinput_init();
     fps_init();
-    game_init();
+    cgame_init();
     hwid_init();
     master_server_init();
 
@@ -76,6 +91,7 @@ void __cdecl hook_Com_Init(char* cmdline) {
     // Server
     common_init();
     updater_init(); // depends on dedicated
+    game_init();
 
 }
 
@@ -93,8 +109,6 @@ void __cdecl hook_Com_Frame() {
     // Call the original function
 	((void (__cdecl *)())0x00434f70)();
 }
-
-
 
 
 /**
@@ -122,12 +136,13 @@ bool hook_patch() {
     window_patch();
     rinput_patch();
     fps_patch();
-    game_patch();
+    cgame_patch();
     updater_patch();
 
     // Patch server side
     common_patch();
     server_patch();
+    game_patch();
 
     
     // Patch black screen / long loading on game startup

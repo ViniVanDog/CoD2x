@@ -1,50 +1,49 @@
-#include "game.h"
+#include "cgame.h"
 
 #include <windows.h>
 
 #include "shared.h"
-#include "../shared/common.h"
+#include "../shared/cod2_client.h"
+#include "../shared/animation.h"
 
 
 #define clientState                   (*((clientState_e*)0x00609fe0))
 #define sv_cheats                     (*((dvar_t**)0x00c5c5cc))
 
-static int clientStateLast = -1;
-dvar_t* g_cod2x = NULL;
-bool firstTime = true;
+extern dvar_t* g_cod2x;
+
+static int cgame_clientStateLast = -1;
+bool cgame_firstTime = true;
 
 /** Called only once on game start after common inicialization. Used to initialize variables, cvars, etc. */
-void game_init() {
+void cgame_init() {
 
     // Register USERINFO cvar that is automatically appended to the client's userinfo string sent to the server
     Dvar_RegisterInt("protocol_cod2x", APP_VERSION_PROTOCOL, APP_VERSION_PROTOCOL, APP_VERSION_PROTOCOL, (enum dvarFlags_e)(DVAR_USERINFO | DVAR_ROM));
     
-    // Register shared cvar between client and server
-    g_cod2x = Dvar_RegisterInt("g_cod2x", 0, 0, APP_VERSION_PROTOCOL, (dvarFlags_e)(DVAR_NOWRITE));
-
-    firstTime = false;
+    cgame_firstTime = false;
 }
 
 
 /** Called every frame on frame start. */
-void game_frame() {
+void cgame_frame() {
 
-    if (clientState != clientStateLast) {
-        Com_DPrintf("Client state changed from %d:%s to %d:%s\n", clientStateLast, get_client_state_name(clientStateLast), clientState, get_client_state_name(clientState));
+    if (clientState != cgame_clientStateLast) {
+        Com_DPrintf("Client state changed from %d:%s to %d:%s\n", cgame_clientStateLast, get_client_state_name(cgame_clientStateLast), clientState, get_client_state_name(clientState));
     }
 
     // Cvar is not defined yet or player disconnected from the server
     if (g_cod2x != NULL) {
 
         // Player disconnected from the server, reset the cvar
-        if (g_cod2x->value.integer > 0 && clientState != clientStateLast && clientState <= CLIENT_STATE_CONNECTED) {
+        if (g_cod2x->value.integer > 0 && clientState != cgame_clientStateLast && clientState <= CLIENT_STATE_CONNECTED) {
             Dvar_SetInt(g_cod2x, 0);
             g_cod2x->modified = true;
         }
 
         // Player just connected to 1.3 server (g_cod2x == 0)
         // Set the cvar modified so the text is printed in the console again below
-        if (g_cod2x->value.integer == 0 && clientState != clientStateLast && clientState == CLIENT_STATE_ACTIVE && clientStateLast <= CLIENT_STATE_PRIMED) {
+        if (g_cod2x->value.integer == 0 && clientState != cgame_clientStateLast && clientState == CLIENT_STATE_ACTIVE && cgame_clientStateLast <= CLIENT_STATE_PRIMED) {
             g_cod2x->modified = true;
         }
 
@@ -62,18 +61,18 @@ void game_frame() {
             }
             Com_Printf("---------------------------------------------------------------------------------\n");
 
-            // Fix animation time from crouch to stand
-            common_fix_clip_bug(g_cod2x->value.integer >= 1);
+            // Fix animation time from crouch to stand since version 1.4.3.x
+            animation_changeFix(g_cod2x->value.integer >= 3);
         }
     }
 
     // Enable cheats when player disconnects from the server
     // It would allow to play demos without the need to do devmap
-    if (clientState != clientStateLast && clientState == CLIENT_STATE_DISCONNECTED) {
+    if (clientState != cgame_clientStateLast && clientState == CLIENT_STATE_DISCONNECTED) {
         Dvar_SetBool(sv_cheats, true);
     }
 
-    clientStateLast = clientState;
+    cgame_clientStateLast = clientState;
 }
 
 
@@ -126,7 +125,7 @@ char** Sys_ListFiles(char* extension, int32_t* numFiles, int32_t wantsubs) {
 
 
 /** Called before the entry point is called. Used to patch the memory. */
-void game_patch() {
+void cgame_patch() {
 
     patch_call(0x00424869, (unsigned int)Sys_ListFiles);
 }

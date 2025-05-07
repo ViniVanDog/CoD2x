@@ -5,6 +5,7 @@
 #include "shared.h"
 #include "../shared/common.h"
 #include "../shared/server.h"
+#include "../shared/game.h"
 #include "updater.h"
 
 
@@ -23,6 +24,7 @@ void __cdecl hook_Com_Init(char* cmdline) {
 
     common_init();
     updater_init();
+    game_init();
 }
 
 
@@ -55,6 +57,7 @@ bool hook_patch() {
 
     common_patch();
     server_patch();
+    game_patch();
     updater_patch();
 
     return true;
