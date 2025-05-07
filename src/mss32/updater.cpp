@@ -276,7 +276,7 @@ void updater_init() {
     // Server
     if (dedicated->value.boolean > 0) {
         // Send the request to the Auto-Update server
-        if (sv_update->value.boolean) {
+        if (sv_update->value.boolean && sv_running->value.boolean) {
             updater_sendRequest();
         }
     } else {
