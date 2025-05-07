@@ -22,6 +22,21 @@ HMODULE hModule;
 unsigned int gfx_module_addr;
 
 
+
+/**
+ * CL_Frame
+ * Is called in the main loop every frame after processing events for client
+ */
+void __cdecl hook_CL_Frame() 
+{
+    int time;
+    ASM( movr, time, "esi" );
+
+    // Call the original function
+    ASM_CALL(RETURN_VOID, 0x0040f850, 1, ESI(time));
+}
+
+
 /**
  * Com_Frame
  * Is called in the main loop every frame.
@@ -129,6 +144,8 @@ bool hook_patch() {
     patch_call(0x00434a66, (unsigned int)hook_Com_Init);
     // Patch Com_Frame
     patch_call(0x00435282, (unsigned int)hook_Com_Frame);
+    // Patch CL_Frame
+    patch_call(0x0043506a, (unsigned int)hook_CL_Frame);
     // Patch function that loads gfx_d3d_mp_x86_s.dll
     patch_call(0x004102b5, (unsigned int)hook_gfxDll);
 

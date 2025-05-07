@@ -747,6 +747,19 @@ void SV_SpawnServer(char* mapname) {
 
 
 
+void G_RunFrame(int time) {
+    // Call the original function
+    ASM_CALL(RETURN_VOID, ADDR(0x004fd1b0, 0x0810a13a), WL(0, 1), WL(EAX, PUSH)(time));
+}
+
+void G_RunFrame_Win32() {
+	int time;
+	ASM( movr, time, "eax" );
+	// Call the original function
+	G_RunFrame(time);
+}
+
+
 
 // Called after all is initialized on game start
 void server_init()
@@ -803,6 +816,12 @@ void server_patch()
     // Hook the SV_ClientBegin function
     patch_call(ADDR(0x00454d12, 0x0808f6ee), (unsigned int)ADDR(SV_ClientBegin_Win32, SV_ClientBegin_Linux));
 
+
+	// Hook the G_RunFrame function
+    patch_call(ADDR(0x0045c1ff, 0x08096765), (unsigned int)ADDR(G_RunFrame_Win32, G_RunFrame)); // SV_RunFrame
+    #if COD2X_WIN32
+        patch_call(0x00459239, (unsigned int)G_RunFrame_Win32); // SV_SpawnServer, because windows compiler unpack some functions...
+    #endif
 
     // Fix "+smoke" bug
     // When player holds smoke or grenade button but its not available, the player will be able to shoot
