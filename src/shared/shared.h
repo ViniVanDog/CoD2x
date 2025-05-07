@@ -68,6 +68,12 @@
     #define __cdecl
 #endif
 
+#if DEBUG
+    #define DEBUG_RELEASE(debug, release) debug
+#else
+    #define DEBUG_RELEASE(debug, release) release
+#endif
+
 
 #include "version.h"
 #include "patch.h"

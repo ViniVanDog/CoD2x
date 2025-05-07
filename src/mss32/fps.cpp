@@ -15,8 +15,7 @@ int clientStateLast = 0;
 
 /** Called only once on game start after common inicialization. Used to initialize variables, cvars, etc. */
 void fps_init() {
-    com_maxFps_limit = Dvar_RegisterBool("com_maxfps_limit", false, (enum dvarFlags_e)(DVAR_NOWRITE | DVAR_CHANGEABLE_RESET));
-
+    com_maxFps_limit = Dvar_RegisterBool("com_maxfps_limit", false, (enum dvarFlags_e)(DEBUG_RELEASE(DVAR_CHEAT, DVAR_NOWRITE) | DVAR_CHANGEABLE_RESET));
     clientStateLast = clientState;
 }
 
