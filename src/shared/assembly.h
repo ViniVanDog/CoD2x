@@ -134,3 +134,13 @@ ASM_CALL(RETURN_VOID, 0x00434460, 1, EAX(var1), ECX(var2), PUSH(var3));
 #define ASM_CALL(...) \
     GET_ASM_CALL_MACRO(__VA_ARGS__, \
         ASM_CALL_10, ASM_CALL_9, ASM_CALL_8, ASM_CALL_7, ASM_CALL_6, ASM_CALL_5, ASM_CALL_4, ASM_CALL_3, ASM_CALL_2, ASM_CALL_1)(__VA_ARGS__)
+
+
+
+
+        
+// Make structure packed - remove paddding, ensure that the structure is aligned to 1 byte
+#define PACKED __attribute__((__packed__))
+
+// Make structure aligned - ensure that the structure is aligned to x bytes
+#define ALIGNED(x) __attribute__((__aligned__(x)))

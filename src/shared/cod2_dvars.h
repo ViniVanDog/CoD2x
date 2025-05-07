@@ -1,9 +1,11 @@
 #ifndef COD2_DVARS_H
 #define COD2_DVARS_H
 
+#include "cod2_math.h"
 
 #define dedicated (*(dvar_t **)(ADDR(0x00c22f00, 0x084a8780)))
 #define sv_maxclients (*(dvar_t **)(ADDR(0x00d52810, 0x0849f74c)))
+#define sv_running (*(dvar_t **)(ADDR(0x00c26108, 0x081a218c)))
 #define sv_packet_info (*((dvar_s**)( ADDR(0x00d52858, 0x0849f798) )))
 #define net_lanauthorize (*((dvar_s**)( ADDR(0x00c8fb14, 0x081fa514) )))
 #define showpackets (*((dvar_s**)( ADDR(0x00c84ae8, 0x081fa500) )))
@@ -14,8 +16,8 @@ enum dvarFlags_e : uint16_t
     DVAR_NOFLAG = 0x0,
     DVAR_ARCHIVE = 0x1,     // save to config_mp.cfg
     DVAR_USERINFO = 0x2,    // cvars used in connection string
-    DVAR_SERVERINFO = 0x4,  // cvars used to describe the server settings to clients
-    DVAR_SYSTEMINFO = 0x8,  // cvars describing the server system resources, like iwds
+    DVAR_SERVERINFO = 0x4,  // cvars used to describe the server settings to clients when clients ask
+    DVAR_SYSTEMINFO = 0x8,  // cvars that are synchronized to all clients
     DVAR_NOWRITE = 0x10,    // write protected, but can be changed by server
     DVAR_LATCH = 0x20,
     DVAR_ROM = 0x40,
@@ -75,6 +77,7 @@ typedef struct
 		unsigned char color[4];
 	};
 } dvarValue_t;
+static_assert(sizeof(dvarValue_t) == 0x4, "sizeof(dvarValue_t)");
 
 typedef struct dvar_s
 {
@@ -111,6 +114,10 @@ inline dvar_t* Dvar_RegisterString(const char* name, const char* value, enum dva
 inline dvar_t* Dvar_RegisterEnum(const char* name, const char** value, int defaultIndex, enum dvarFlags_e flags) {
     return ((dvar_t* (__cdecl*)(const char*, const char**, int, unsigned short))ADDR(0x004383a0, 0x080b4292))(name, value, defaultIndex, flags);
 }
+inline dvar_t* Dvar_RegisterVec3(const char *name, float x, float y, float z, float min, float max, unsigned short flags) {
+    return ((dvar_t* (__cdecl*)(const char*, float, float, float, float, float, unsigned short))ADDR(0x00438210, 0x080b4148))
+        (name, x, y, z, min, max, flags);
+}
 
 inline void Dvar_SetBool(struct dvar_s* dvar, int value) {
     ((void (__cdecl*)(struct dvar_s*, int))ADDR(0x00438b90, 0x080b4980))(dvar, value);
@@ -123,6 +130,9 @@ inline void Dvar_SetFloat(struct dvar_s* dvar, float value) {
 }
 inline void Dvar_SetString(struct dvar_s* dvar, const char* value) {
     ((void (__cdecl*)(struct dvar_s*, const char*))ADDR(0x00438ca0, 0x080b4a80))(dvar, value);
+}
+inline void Dvar_SetVec3(struct dvar_s *dvar, float x, float y, float z) {
+    ((void (__cdecl*)(struct dvar_s*, float, float, float))ADDR(0x00438c50, 0x080b4a18))(dvar, x, y, z);
 }
 
 inline dvar_t* Dvar_GetDvarByName(const char* name) {
