@@ -200,7 +200,7 @@ typedef struct playerState
 	int deltaTime;
 	hudElemState hud;
 } playerState_t;
-
+static_assert((sizeof(playerState_t) == 0x26a8));
 
 
 

@@ -5,6 +5,7 @@
 #include "cod2_entity.h"
 #include "cod2_player.h"
 
+#define cg         			(*((cg_t *)0x014ee080))
 #define cg_entities         (*((centity_t (*)[1024])0x015E2A80))
 #define clientInfo          (*((clientInfo_t (*)[64])0x015CF994)) // client side info
 
@@ -46,7 +47,50 @@ typedef struct {
 } centity_t; //size=548, dw=137
 
 
+typedef struct
+{
+	int x;
+	int y;
+	int width;
+	int height;
+	float fov_x;
+	float fov_y;
+	vec3_t vieworg;
+	vec3_t viewaxis[3];
+	int time;
+	int rdflags;
+	byte areamask[8];
+} refdef_t;
 
+typedef struct
+{
+	int clientFrame;
+	int clientNum;
+	int padding[7];
+	void *snap;
+	void *nextSnap;
+
+	byte padding0[154520];
+
+	playerState_t predictedPlayerState;
+
+	byte padding5[772];
+
+	refdef_t refdef;
+	vec3_t refdefViewAngles;
+	int padding2[3582];
+	int crosshairClientNum;
+	int crosshairClientTime;
+	int padding3[3];
+	int crosshairClientHealth;
+	int padding4[173];
+	vec3_t kick_angles;
+	int padding1[205363];
+	byte padding6[48];
+} cg_t;
+static_assert((sizeof(cg_t) == 0xf49a0));
+static_assert(offsetof(cg_t, predictedPlayerState) == 0x025bc4);
+static_assert(offsetof(cg_t, refdef) == 0x028570);
 
 
 
