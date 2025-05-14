@@ -9,6 +9,10 @@
 
 #define clientState                   (*((clientState_e*)0x00609fe0))
 #define sv_cheats                     (*((dvar_t**)0x00c5c5cc))
+#define cg_thirdperson                (*((dvar_t**)0x014b5bdc))
+#define cg_thirdPersonAngle           (*((dvar_t**)0x0166e024))
+#define cg_thirdPersonRange           (*((dvar_t**)0x0166baa0))
+
 
 extern dvar_t* g_cod2x;
 
@@ -51,6 +55,9 @@ void cgame_init() {
 
     // Register USERINFO cvar that is automatically appended to the client's userinfo string sent to the server
     Dvar_RegisterInt("protocol_cod2x", APP_VERSION_PROTOCOL, APP_VERSION_PROTOCOL, APP_VERSION_PROTOCOL, (enum dvarFlags_e)(DVAR_USERINFO | DVAR_ROM));
+    
+    // Add another mode to thirdperson
+    cg_thirdperson = Dvar_RegisterInt("cg_thirdPerson", 0, 0, 2, (enum dvarFlags_e)(DVAR_CHEAT | DVAR_CHANGEABLE_RESET));
 
     Cmd_AddCommand("increase", Cmd_Increase_Decrease);
     Cmd_AddCommand("decrease", Cmd_Increase_Decrease);
@@ -158,8 +165,104 @@ char** Sys_ListFiles(char* extension, int32_t* numFiles, int32_t wantsubs) {
 }
 
 
+
+void CG_TraceCapsule(trace_t *result, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int skipNumber, int mask) {
+    ASM_CALL(RETURN_VOID, 0x004de690, 7, PUSH(result), PUSH(start), PUSH(mins), PUSH(maxs), PUSH(end), PUSH(skipNumber), PUSH(mask));
+}
+
+void CG_OffsetThirdPersonView( void ) {
+
+    // Use the original function if not connected to cod2x server, unless the player is in the new third person mode
+    if (g_cod2x->value.integer < 3 && cg_thirdperson->value.integer != 2) {
+        // Call the original function
+        ((void(*)())0x004ce890)();
+        return;
+    }
+
+	vec3_t forward, right, up;
+	vec3_t view;
+	vec3_t focusAngles;
+	trace_t trace;
+	static vec3_t mins = { -4, -4, -4 };
+	static vec3_t maxs = { 4, 4, 4 };
+	vec3_t focusPoint;
+	float focusDist;
+
+    cg.refdef.vieworg[2] += cg.predictedPlayerState.viewHeightCurrent;
+
+	VectorCopy( cg.refdefViewAngles, focusAngles );
+
+    if (cg.predictedPlayerState.pm_type > 5) {
+        focusAngles[1] = cg.predictedPlayerState.stats[1];
+        cg.refdefViewAngles[1] = cg.predictedPlayerState.stats[1];
+    }
+
+	if ( focusAngles[PITCH] > 45 ) {
+		focusAngles[PITCH] = 45;        // don't go too far overhead
+	}
+
+	AngleVectors( focusAngles, forward, NULL, NULL );
+	VectorMA( cg.refdef.vieworg, 512, forward, focusPoint );
+
+	VectorCopy( cg.refdef.vieworg, view );
+	view[2] += 8;
+	cg.refdefViewAngles[PITCH] *= 0.5;
+    cg.refdefViewAngles[YAW] -= cg_thirdPersonAngle->value.decimal;
+        
+	AngleVectors( cg.refdefViewAngles, forward, right, up );
+	VectorMA( view, -cg_thirdPersonRange->value.decimal, forward, view );
+
+    // CoD2x: New mode that rotates around head without collision
+    if (cg_thirdperson->value.integer == 2) {
+        VectorCopy( view, cg.refdef.vieworg );
+        cg.refdefViewAngles[PITCH] *= 1.2;
+        return;
+    }
+
+	// trace a ray from the origin to the viewpoint to make sure the view isn't
+	// in a solid block.  Use an 8 by 8 block to prevent the view from near clipping anything
+	CG_TraceCapsule( &trace, cg.refdef.vieworg, mins, maxs, view, cg.predictedPlayerState.clientNum, 0x811 );
+
+	if ( trace.fraction != 1.0 ) {
+
+        vec3_t diff;   
+        vec3_t endpos;
+        VectorSubtract( view, cg.refdef.vieworg, diff );
+        VectorMA( cg.refdef.vieworg, trace.fraction, diff, endpos );
+		VectorCopy( endpos, view );
+
+		view[2] += ( 1.0 - trace.fraction ) * 32;
+
+		// try another trace to this position, because a tunnel may have the ceiling
+		// close enogh that this is poking out
+		CG_TraceCapsule( &trace, cg.refdef.vieworg, mins, maxs, view, cg.predictedPlayerState.clientNum, 0x811 );
+        
+        VectorSubtract( view, cg.refdef.vieworg, diff );
+        VectorMA( cg.refdef.vieworg, trace.fraction, diff, endpos );
+		VectorCopy( endpos, view );
+	}
+
+	VectorCopy( view, cg.refdef.vieworg );
+
+	// select pitch to look at focus point from vieword
+	VectorSubtract( focusPoint, cg.refdef.vieworg, focusPoint );
+	focusDist = sqrt( focusPoint[0] * focusPoint[0] + focusPoint[1] * focusPoint[1] );
+	if ( focusDist < 1 ) {
+		focusDist = 1;  // should never happen
+	}
+    cg.refdefViewAngles[PITCH] = -180 / M_PI * atan2( focusPoint[2], focusDist );
+}
+
+
+
+
 /** Called before the entry point is called. Used to patch the memory. */
 void cgame_patch() {
 
     patch_call(0x00424869, (unsigned int)Sys_ListFiles);
+
+    patch_call(0x004cfb27, (unsigned int)CG_OffsetThirdPersonView);
+
+    patch_nop(0x004bea22, 5); // 004bea22  e81996f7ff call Dvar_RegisterBool (cg_thirdPerson)
+    patch_nop(0x004bea2c, 5); // 004bea2c  a3dc5b4b01 mov dword [cg_thirdperson], eax
 }
