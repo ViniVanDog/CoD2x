@@ -550,21 +550,25 @@ void BG_Player_DoControllersInternal(entityState_s *es, clientInfo_t *ci, client
 	vec3_t viewOrigin;
 	VectorCopy(es->pos.trBase, viewOrigin);
 	viewOrigin[2] += 60;
-	vec4_t crossPointColor = { 1, .8, .8, 1 };
+	vec4_t crossPointColor = { 1, .5, .5, 1 };
 	// Its client running the server, we can get exact position of the player
-	if (COD2X_WIN32 && sv_running->value.boolean && (player_debug->value.integer > 0 || player_debugEyePosition->value.boolean)) {
-		gentity_t* ent = &g_entities[ci->clientNum];
-		if (ent->client) {
-			G_GetPlayerViewOrigin(ent, viewOrigin);
-			Vector4Set(crossPointColor, 1, 1, 1, 1);
+	if (COD2X_WIN32 && (player_debug->value.integer > 0 || player_debugEyePosition->value.boolean)) {
+		
+		if (sv_running->value.boolean) {
+			gentity_t* ent = &g_entities[ci->clientNum];
+			if (ent->client) {
+				G_GetPlayerViewOrigin(ent, viewOrigin);
+				Vector4Set(crossPointColor, 1, 1, 1, 1);
+			}
 		}
 
 		/*Dvar_SetFloat(x, viewOrigin[0]);
 		Dvar_SetFloat(y, viewOrigin[1]);
 		Dvar_SetFloat(z, viewOrigin[2]);*/
 
-		CL_AddDebugCrossPoint(viewOrigin, 3, crossPointColor, isServer, 0, 0);
+		CL_AddDebugCrossPoint(viewOrigin, 3, crossPointColor, 1, 0, 0);
 	}
+	
 
 	// Debugging for listen server
 	if (COD2X_WIN32 && player_debug->value.integer > 0 && (isServer + 1) == player_debug->value.integer)
