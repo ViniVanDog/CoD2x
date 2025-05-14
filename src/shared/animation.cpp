@@ -1105,11 +1105,11 @@ void BG_PlayerAngles(const entityState_s *es, clientInfo_t *ci)
 	{
 		destination = 0.0;
 	}
-	// CoD2x: Remove the * 0.6 to make the player up-down look match the 1st view
-	else if (g_cod2x->value.integer >= 3) 
+	// CoD2x: Remove the * 0.6 to make the player up-down look match the 1st view (disabled)
+	/*else if (g_cod2x->value.integer >= 3) 
 	{
 		destination = AngleNormalize180(playerAngles[0]);
-	}
+	}*/
 	// CoD2x: end
 	else
 	{
