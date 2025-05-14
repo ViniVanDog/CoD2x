@@ -15,12 +15,46 @@ extern dvar_t* g_cod2x;
 static int cgame_clientStateLast = -1;
 bool cgame_firstTime = true;
 
+
+void Cmd_Increase_Decrease() {
+    const char* cmd = Cmd_Argv(0);
+    
+    if (Cmd_Argc() != 2) {
+        Com_Printf("%s <variablename> : increase value\n", cmd);
+        return;
+    }
+
+    int sign = 1;
+    if (strcmp(cmd, "decrease") == 0) {
+        sign = -1;
+    }
+
+    const char* dvarName = Cmd_Argv(1);
+	dvar_t* dvar = Dvar_GetDvarByName(dvarName);
+
+    if (dvar == NULL) {
+        Com_Printf("%s not found\n", dvarName);
+        return;
+    }
+
+    if (dvar->type == DVAR_TYPE_INT) {
+        Dvar_SetInt(dvar, dvar->value.integer + sign);
+    } else if (dvar->type == DVAR_TYPE_FLOAT) {
+        Dvar_SetFloat(dvar, dvar->value.decimal + sign);
+    } else {
+        Com_Printf("%s is not an int or float\n", dvarName);
+    }
+}
+
 /** Called only once on game start after common inicialization. Used to initialize variables, cvars, etc. */
 void cgame_init() {
 
     // Register USERINFO cvar that is automatically appended to the client's userinfo string sent to the server
     Dvar_RegisterInt("protocol_cod2x", APP_VERSION_PROTOCOL, APP_VERSION_PROTOCOL, APP_VERSION_PROTOCOL, (enum dvarFlags_e)(DVAR_USERINFO | DVAR_ROM));
-    
+
+    Cmd_AddCommand("increase", Cmd_Increase_Decrease);
+    Cmd_AddCommand("decrease", Cmd_Increase_Decrease);
+
     cgame_firstTime = false;
 }
 
