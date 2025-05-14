@@ -20,13 +20,17 @@ dvar_t* player_offsetAngleOrigin;
 dvar_t* player_debug;
 dvar_t* player_debugEyePosition;
 
-dvar_t* f1;
+/*dvar_t* f1;
 dvar_t* f2;
 dvar_t* f3;
 
+dvar_t* i1;
+dvar_t* i2;
+dvar_t* i3;
+
 dvar_t* x;
 dvar_t* y;
-dvar_t* z;
+dvar_t* z;*/
 
 
 enum controllerMovementType_e {
@@ -445,8 +449,8 @@ void BG_Player_DoControllersInternal(entityState_s *es, clientInfo_t *ci, client
 			vec3_t zeroVec = {0, 0, 0};
 			animation_adjustRotation(zeroVec, control->tag_neck_angles, control->tag_neck_angles);
 
-			control->tag_neck_angles[0] += sinf(DEG2RAD(fclamp(ci->playerAngles[0], 0, 90))) * sinf(DEG2RAD(fclamp(movementYawAngle, -90, 0))) * 45 * f1->value.decimal;
-			control->tag_neck_angles[1] += sinf(DEG2RAD(fclamp(ci->playerAngles[0], 0, 90))) * sinf(DEG2RAD(fclamp(movementYawAngle, 0, 90))) * 30 * f2->value.decimal;
+			control->tag_neck_angles[0] += sinf(DEG2RAD(fclamp(ci->playerAngles[0], 0, 90))) * sinf(DEG2RAD(fclamp(movementYawAngle, -90, 0))) * 45;
+			control->tag_neck_angles[1] += sinf(DEG2RAD(fclamp(ci->playerAngles[0], 0, 90))) * sinf(DEG2RAD(fclamp(movementYawAngle, 0, 90))) * 30;
 
 			animationPlayerData[dataIndex].controllerMovementType |= CONTROLLER_CLIMBUP;
 		}
@@ -555,9 +559,9 @@ void BG_Player_DoControllersInternal(entityState_s *es, clientInfo_t *ci, client
 			Vector4Set(crossPointColor, 1, 1, 1, 1);
 		}
 
-		Dvar_SetFloat(x, viewOrigin[0]);
+		/*Dvar_SetFloat(x, viewOrigin[0]);
 		Dvar_SetFloat(y, viewOrigin[1]);
-		Dvar_SetFloat(z, viewOrigin[2]);
+		Dvar_SetFloat(z, viewOrigin[2]);*/
 
 		CL_AddDebugCrossPoint(viewOrigin, 3, crossPointColor, isServer, 0, 0);
 	}
@@ -1489,13 +1493,17 @@ void animation_init() {
 	player_offsetPositionOrigin = 	Dvar_RegisterVec3("player_offsetPositionOrigin", 	0, 0, 0, -FLT_MAX, FLT_MAX, (enum dvarFlags_e)(DVAR_CHEAT | DVAR_CHANGEABLE_RESET));
 	player_offsetAngleOrigin = 		Dvar_RegisterVec3("player_offsetAngleOrigin", 		0, 0, 0, -FLT_MAX, FLT_MAX, (enum dvarFlags_e)(DVAR_CHEAT | DVAR_CHANGEABLE_RESET));
 	
-	f1 = Dvar_RegisterFloat("f1", 1, -FLT_MAX, FLT_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
-	f2 = Dvar_RegisterFloat("f2", 1, -FLT_MAX, FLT_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
-	f3 = Dvar_RegisterFloat("f3", 1, -FLT_MAX, FLT_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
+	//f1 = Dvar_RegisterFloat("f1", 1, -FLT_MAX, FLT_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
+	//f2 = Dvar_RegisterFloat("f2", 1, -FLT_MAX, FLT_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
+	//f3 = Dvar_RegisterFloat("f3", 1, -FLT_MAX, FLT_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
 
-	x = Dvar_RegisterFloat("x", 1, -FLT_MAX, FLT_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
-	y = Dvar_RegisterFloat("y", 1, -FLT_MAX, FLT_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
-	z = Dvar_RegisterFloat("z", 1, -FLT_MAX, FLT_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
+	//i1 = Dvar_RegisterInt("i1", 0, -INT32_MIN, INT32_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
+	//i2 = Dvar_RegisterInt("i2", 0, -INT32_MIN, INT32_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
+	//i3 = Dvar_RegisterInt("i3", 0, -INT32_MIN, INT32_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
+
+	//x = Dvar_RegisterFloat("x", 1, -FLT_MAX, FLT_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
+	//y = Dvar_RegisterFloat("y", 1, -FLT_MAX, FLT_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
+	//z = Dvar_RegisterFloat("z", 1, -FLT_MAX, FLT_MAX, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
 }
 
 
