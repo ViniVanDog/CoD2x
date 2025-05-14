@@ -178,6 +178,10 @@ $(WIN_MSS32_TARGET): $(WIN_MSS32_OBJECTS) $(WIN_MSS32_OBJ_DIR)/version.res
 	@-if exist "$(subst /,\,$(abspath $@.2.old))" move "$(subst /,\,$(abspath $@.2.old))" "$(subst /,\,$(abspath $@.3.old))"
 	@-if exist "$(subst /,\,$(abspath $@.1.old))" move "$(subst /,\,$(abspath $@.1.old))" "$(subst /,\,$(abspath $@.2.old))"
 	@-if exist "$(subst /,\,$(abspath $@))" move "$(subst /,\,$(abspath $@))" "$(subst /,\,$(abspath $@.1.old))"
+	@echo.
+
+	@echo Deleting any mss32_hotreload_*.dll files...
+	@for %%f in ("$(WIN_BIN_DIR)\mss32_hotreload_*.dll") do (del /Q "%%f" || exit /b 0)	
 	@echo   Done.
 
 	@echo.

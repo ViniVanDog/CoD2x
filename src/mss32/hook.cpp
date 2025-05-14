@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "shared.h"
+#include "hotreload.h"
 #include "exception.h"
 #include "freeze.h"
 #include "window.h"
@@ -21,7 +22,7 @@
 
 HMODULE hModule;
 unsigned int gfx_module_addr;
-
+bool hook_hotreload_init = false;
 
 
 /**
@@ -44,6 +45,22 @@ void __cdecl hook_CL_Frame()
  */
 void __cdecl hook_Com_Frame() 
 {
+    #if DEBUG
+        // First frame from newly loaded DLL, we need to initialize
+        if (hook_hotreload_init) {
+            hook_hotreload_init = false;
+            hook_Com_Init("");
+            hook_gfxDll();
+        }
+
+        // New DLL is requested to be loaded, unload the old one and load the new one
+        if (hotreload_requested) {
+            hotreload_unload();
+            hotreload_loadDLL();
+            return;
+        }
+    #endif
+
     freeze_frame();
     fps_frame();
     cgame_frame();
@@ -82,11 +99,14 @@ int __cdecl hook_gfxDll() {
  * Com_Init
  * Is called in main function when the game is started. Is called only once on game start.
  */
-void __cdecl hook_Com_Init(char* cmdline) {
+void __cdecl hook_Com_Init(const char* cmdline) {
 
     Com_Printf("Command line: '%s'\n", cmdline);
 
     // Client side
+    #if DEBUG
+    hotreload_init();
+    #endif
     exception_init();
     window_init();
     rinput_init();
@@ -99,7 +119,8 @@ void __cdecl hook_Com_Init(char* cmdline) {
     server_init();
 
     // Call the original function
-	((void (__cdecl *)(char*))0x00434460)(cmdline);
+    if (!DLL_HOTRELOAD)
+	    ((void (__cdecl *)(const char*))0x00434460)(cmdline);
 
     // Client
     freeze_init(); // depends on dedicated
@@ -177,6 +198,18 @@ bool hook_patch() {
     patch_string_ptr(0x00437e0f + 1, "Error while registering cvar '%s'.\nUnable to create more than %i dvars.\n\n"
         "There is too many cvars in your config!\nClean your config from unused dvars and try again.\n\n"
         "Normal config should contains no more than 400 lines of dvars. Compare your config with a default one to find the differences.");
+
+
+    // Hot-reloading in debug mode
+    #if DEBUG
+        // DLL was hot-reloaded, we need to call the init functions again
+        if (DLL_HOTRELOAD) {
+            hook_hotreload_init = true;
+        }
+
+        // Watch for mss32.dll change
+        hotreload_watch_dll();
+    #endif
 
     return TRUE;
 }

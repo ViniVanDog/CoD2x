@@ -67,4 +67,17 @@ inline void Cmd_AddCommand(const char *command, void (*func)()) {
 }
 
 
+// Register a new command
+inline void Cmd_RemoveCommand(const char *command) {
+    #if COD2X_WIN32
+        ((void(*)(const char *))0x00421370)(command);
+    #endif
+    #if COD2X_LINUX
+        ((void(*)(const char *))0x0806072e)(command);
+    #endif
+}
+
+
+
+
 #endif

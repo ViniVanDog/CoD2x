@@ -13,12 +13,12 @@ volatile DWORD freeze_lastHeartbeat = 0;   // Updated by the main thread
 volatile bool freeze_exitThread = false;
 
 extern volatile bool exception_processCrashed;
-
+extern volatile bool hotreload_requested;
 
 
 DWORD WINAPI freeze_watchdogThreadProc(LPVOID lpParameter) {
     (void)lpParameter; // Unused parameter.
-    while (!freeze_exitThread && !exception_processCrashed) {
+    while (!freeze_exitThread && !exception_processCrashed && !hotreload_requested) {
 
         Sleep(1000);
 
@@ -45,7 +45,7 @@ DWORD WINAPI freeze_watchdogThreadProc(LPVOID lpParameter) {
 
             } else {
                 // Ignore the freeze and wait for unfreeze
-                while ((currentTime - freeze_lastHeartbeat) > 5000 && !freeze_exitThread && !exception_processCrashed) {
+                while ((currentTime - freeze_lastHeartbeat) > 5000 && !freeze_exitThread && !exception_processCrashed && !hotreload_requested) {
                     Sleep(1000);
                     currentTime = GetTickCount();
                 }

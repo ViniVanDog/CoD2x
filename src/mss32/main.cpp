@@ -15,6 +15,9 @@ void* originalEntryPoint = NULL;
 HMODULE EXE_HMODULE = NULL;
 char EXE_PATH[MAX_PATH] = {0}; 
 char EXE_DIRECTORY_PATH[MAX_PATH] = {0};
+char DLL_PATH[MAX_PATH] = {0}; 
+bool DLL_HOTRELOAD = false; // set to true when the DLL was hot-reloaded in debug mode
+
 
 /**
  * Load the CoD2x patches
@@ -88,6 +91,33 @@ bool main_patchEntryPoint() {
         return FALSE;
     }
 
+    // Get name of the DLL file
+    char* lastBackslash = strrchr(DLL_PATH, '\\');
+    if (!lastBackslash) {
+        SHOW_ERROR("Failed to get DLL file name.");
+        return FALSE;
+    }
+
+    // Check if this DLL file name is mss32.dll
+    if (stricmp(lastBackslash + 1, APP_MODULE_NAME) != 0) {      
+        #if DEBUG
+            // If the DLL name is not mss32.dll, we can assume that the DLL is being hot-reloaded in debug mode
+            DLL_HOTRELOAD = true;
+            ok = hook_patch(); 
+            if (!ok) {
+                ExitProcess(EXIT_FAILURE);
+                return false;
+            }
+            return TRUE;
+        #else
+            MessageBoxA(NULL, 
+                "CoD2x " APP_VERSION " is not installed correctly.\n\n"
+                "Invalid name of mss32.dll file!", "CoD2x error", MB_OK | MB_ICONERROR);
+            return FALSE;
+        #endif       
+    }
+
+
     originalEntryPoint = (void*)0x0057db54; // Entry point of CoD2MP_s.exe
 
     // Save the original bytes at the entry point
@@ -133,6 +163,21 @@ bool main_getExeData() {
     // Save the paths
     strncpy(EXE_PATH, exePath, MAX_PATH);
     strncpy(EXE_DIRECTORY_PATH, exeDirectory, MAX_PATH);
+
+
+    // Get this DLL path
+    HMODULE dllHandle = NULL;
+    if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)&main_getExeData, &dllHandle)) {
+        SHOW_ERROR_WITH_LAST_ERROR("Failed to get DLL handle");
+        return false;
+    }
+    char dllPath[MAX_PATH];
+    if (!GetModuleFileNameA(dllHandle, dllPath, MAX_PATH)) {
+        SHOW_ERROR_WITH_LAST_ERROR("Failed to get current DLL path");
+        return false;
+    }
+    strncpy(DLL_PATH, dllPath, MAX_PATH);
+    
 
     return true;
 }
