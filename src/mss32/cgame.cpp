@@ -13,6 +13,7 @@
 #define cg_thirdPersonAngle           (*((dvar_t**)0x0166e024))
 #define cg_thirdPersonRange           (*((dvar_t**)0x0166baa0))
 
+dvar_t* cg_thirdPersonMode;
 
 extern dvar_t* g_cod2x;
 
@@ -57,7 +58,7 @@ void cgame_init() {
     Dvar_RegisterInt("protocol_cod2x", APP_VERSION_PROTOCOL, APP_VERSION_PROTOCOL, APP_VERSION_PROTOCOL, (enum dvarFlags_e)(DVAR_USERINFO | DVAR_ROM));
     
     // Add another mode to thirdperson
-    cg_thirdperson = Dvar_RegisterInt("cg_thirdPerson", 0, 0, 2, (enum dvarFlags_e)(DVAR_CHEAT | DVAR_CHANGEABLE_RESET));
+    cg_thirdPersonMode = Dvar_RegisterInt("cg_thirdPersonMode", 0, 0, 1, (enum dvarFlags_e)(DVAR_CHEAT | DVAR_CHANGEABLE_RESET));
 
     Cmd_AddCommand("increase", Cmd_Increase_Decrease);
     Cmd_AddCommand("decrease", Cmd_Increase_Decrease);
@@ -173,7 +174,7 @@ void CG_TraceCapsule(trace_t *result, const vec3_t start, const vec3_t mins, con
 void CG_OffsetThirdPersonView( void ) {
 
     // Use the original function if not connected to cod2x server, unless the player is in the new third person mode
-    if (g_cod2x->value.integer < 3 && cg_thirdperson->value.integer != 2) {
+    if (g_cod2x->value.integer < 3 && cg_thirdPersonMode->value.integer != 1) {
         // Call the original function
         ((void(*)())0x004ce890)();
         return;
@@ -213,11 +214,12 @@ void CG_OffsetThirdPersonView( void ) {
 	VectorMA( view, -cg_thirdPersonRange->value.decimal, forward, view );
 
     // CoD2x: New mode that rotates around head without collision
-    if (cg_thirdperson->value.integer == 2) {
+    if (cg_thirdPersonMode->value.integer == 1) {
         VectorCopy( view, cg.refdef.vieworg );
         cg.refdefViewAngles[PITCH] *= 1.2;
         return;
     }
+    // CoD2x: end
 
 	// trace a ray from the origin to the viewpoint to make sure the view isn't
 	// in a solid block.  Use an 8 by 8 block to prevent the view from near clipping anything
@@ -262,9 +264,6 @@ void cgame_patch() {
     patch_call(0x00424869, (unsigned int)Sys_ListFiles);
 
     patch_call(0x004cfb27, (unsigned int)CG_OffsetThirdPersonView);
-
-    patch_nop(0x004bea22, 5); // 004bea22  e81996f7ff call Dvar_RegisterBool (cg_thirdPerson)
-    patch_nop(0x004bea2c, 5); // 004bea2c  a3dc5b4b01 mov dword [cg_thirdperson], eax
 
 
     // Cvar "snaps" max value change from 30 to 40
