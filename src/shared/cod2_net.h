@@ -37,7 +37,7 @@ struct netaddr_s
     uint16_t port;
 	uint8_t ipx[10];
 };
-static_assert(sizeof(netaddr_s) == 0x14, "sizeof(netaddr_s)");
+static_assert(sizeof(netaddr_s) == 0x14);
 
 typedef struct
 {
@@ -54,6 +54,26 @@ enum netsrc_e
 	NS_CLIENT,
 	NS_SERVER
 };
+
+#define MAX_MSGLEN 0x4000
+typedef struct
+{
+	int			outgoingSequence;
+	netsrc_e	sock;
+	int			dropped;
+	int			incomingSequence;
+	netaddr_s	remoteAddress;
+	int 		qport;
+	int			fragmentSequence;
+	int			fragmentLength;
+	byte		fragmentBuffer[MAX_MSGLEN];
+	int	        unsentFragments;
+	int			unsentFragmentStart;
+	int			unsentLength;
+	byte		unsentBuffer[MAX_MSGLEN];
+	void *      pProf;
+} netchan_t;
+static_assert(sizeof(netchan_t) == 0x8040);
 
 
 

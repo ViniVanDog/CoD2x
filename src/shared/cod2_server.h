@@ -5,6 +5,7 @@
 #include "assembly.h"
 #include "cod2_shared.h"
 #include "cod2_dvars.h"
+#include "cod2_player.h"
 
 #define MAX_CHALLENGES 1024
 
@@ -22,6 +23,81 @@ typedef struct
 	char clientPBguid[33];
 } challenge_t;
 static_assert(sizeof(challenge_t) == 0x74, "sizeof(challenge_t)");
+
+
+
+typedef struct
+{
+	playerState_t ps;
+	int	num_entities;
+	int	num_clients;
+	int	first_entity;
+	int	first_client;
+	int messageSent;
+	int messageAcked;
+	int	messageSize;
+} clientSnapshot_t;
+
+typedef struct client_s
+{
+    int state;
+    int sendAsActive;
+    char const* dropReason;
+    char userinfo[0x400];
+    byte reliableCommandInfo[0x408][0x80];
+    int reliableSequence;
+    int reliableAcknowledge;
+    int reliableSent;
+    int messageAcknowledge;
+    int gamestateMessageNum;
+    int challenge;
+    usercmd_t lastUsercmd;
+    int lastClientCommand;
+    char lastClientCommandString[0x400];
+    gentity_t* gentity;
+    char name[0x20];
+    char downloadName[0x40];
+    int download;
+    int downloadSize;
+    int downloadCount;
+    int downloadClientBlock;
+    int downloadCurrentBlock;
+    int downloadXmitBlock;
+    uint8_t* downloadBlocks[0x8];
+    int downloadBlockSize[0x8];
+    int downloadEOF;
+    int downloadSendTime;
+    char downloadURL[0x100];
+    int wwwOk;
+    int downloadingWWW;
+    int clientDownloadingWWW;
+    int wwwFallback;
+    int deltaMessage;
+    int nextReliableTime;
+    int lastPacketTime;
+    int lastConnectTime;
+    int nextSnapshotTime;
+    int rateDelayed;
+    int timeoutCount;
+    clientSnapshot_t frames[0x20];
+    int ping;
+    int rate;
+    int snapshotMsec;
+    int pureAuthentic;
+    netchan_t netchan;
+    byte netProfiling[0x38000];
+    int guid;
+    uint16_t scriptId;
+    int bIsTestClient;
+    int serverId;
+    byte voicePackets[261][0x28];
+    int voicePacketCount;
+    bool muteList[0x40];
+    bool sendVoice;
+    char PBguid[0x21];
+    char clientPBguid[0x21];
+} client_t;
+static_assert((sizeof(client_t) == 0xb1064));
 
 
 
