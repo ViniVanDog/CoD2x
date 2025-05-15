@@ -251,7 +251,7 @@ void SV_MasterHeartbeat( const char *hbname )
 
 			if (masterServerAddr[i].type != NA_BAD)
 			{
-				Com_Printf( "Sending heartbeat to %s\n", sv_master[i]->value.string );
+				Com_DPrintf( "Sending heartbeat to %s\n", sv_master[i]->value.string );
 				NET_OutOfBandPrint( NS_SERVER, masterServerAddr[i], va("heartbeat %s\n", hbname));
 			}
 		}
@@ -764,9 +764,9 @@ void G_RunFrame_Win32() {
 // Called after all is initialized on game start
 void server_init()
 {
-	sv_master[0] = Dvar_RegisterString("sv_master1", SERVER_ACTIVISION_MASTER_URI, (dvarFlags_e)(DVAR_CHANGEABLE_RESET));
-	sv_master[1] = Dvar_RegisterString("sv_master2", SERVER_MASTER_URI, (dvarFlags_e)(DVAR_CHANGEABLE_RESET));
-	sv_master[2] = Dvar_RegisterString("sv_master3", "", (dvarFlags_e)(DVAR_CHANGEABLE_RESET));
+	sv_master[0] = Dvar_RegisterString("sv_master1", SERVER_ACTIVISION_MASTER_URI, 	(dvarFlags_e)(DVAR_ROM | DVAR_CHANGEABLE_RESET));
+	sv_master[1] = Dvar_RegisterString("sv_master2", SERVER_MASTER_URI, 			(dvarFlags_e)(DVAR_ROM | DVAR_CHANGEABLE_RESET));
+	sv_master[2] = Dvar_RegisterString("sv_master3", "", 							(dvarFlags_e)(DVAR_CHANGEABLE_RESET));
 
 	sv_cracked = Dvar_RegisterBool("sv_cracked", false, (dvarFlags_e)(DVAR_CHANGEABLE_RESET));
 	
