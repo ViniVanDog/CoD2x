@@ -947,4 +947,10 @@ void server_patch()
 
 	// Disable "^3WARNING: Non-localized %s string is not allowed to have letters in it. Must be changed over to a localized string: %s"
 	patch_nop(ADDR(0x00504990, 0x0811098e), 5);
+
+	// Disable other messages printed in the console
+	patch_nop(ADDR(0x004fc807, 0x081094f5), 5); // Disable "==== ShutdownGame ===="
+	//patch_nop(ADDR(0x004fc2aa, 0x081090a6), 5); // Disable "------- Game Initialization -------"
+	patch_nop(ADDR(0x004fc2bc, 0x081090ba), 5); // Disable "gamename: Call of Duty 2"
+	patch_nop(ADDR(0x004fc2cb, 0x081090ce), 5);	// Disable "gamedate: Jun 23 2006"
 }
