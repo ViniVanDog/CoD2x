@@ -265,4 +265,11 @@ void cgame_patch() {
 
     patch_nop(0x004bea22, 5); // 004bea22  e81996f7ff call Dvar_RegisterBool (cg_thirdPerson)
     patch_nop(0x004bea2c, 5); // 004bea2c  a3dc5b4b01 mov dword [cg_thirdperson], eax
+
+
+    // Cvar "snaps" max value change from 30 to 40
+    patch_int32(0x00411067 + 1, 40); // 00411067  bb1e000000         mov     ebx, 30
+
+    // Cvar cl_maxpackets max value change from 100 to 125
+    patch_int32(0x00410c64 + 1, 125); // 00410c64  bb64000000         mov     ebx, 100
 }

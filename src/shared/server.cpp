@@ -15,6 +15,7 @@
 #define svs_time 								(*((int*)(ADDR(0x00d35704, 0x08423084))))
 #define svs_nextHeartbeatTime 					(*((int*)(ADDR(0x00d35754, 0x084230d4))))
 #define svs_nextStatusResponseTime 				(*((int*)(ADDR(0x00d35758, 0x084230d8))))
+#define svs_clients 							(*((client_t (*)[64])(ADDR(0x00d3570c, 0x0842308c))))
 
 #define MAX_MASTER_SERVERS  3
 dvar_t*		sv_master[MAX_MASTER_SERVERS];
@@ -54,6 +55,98 @@ bool SV_IsTempBannedGuid(int guid) {
 	ASM_CALL(RETURN(ret), ADDR(0x00453160, 0x0808d5ac), WL(0, 1), WL(EDI, PUSH)(guid));
 	return ret;
 }
+
+
+
+
+
+
+/*
+=================
+SV_UserinfoChanged
+
+Pull specific info from a newly changed userinfo string
+into a more C friendly form.
+=================
+*/
+void SV_UserinfoChanged( client_t *cl )
+{
+	const char	*val;
+	int		i;
+
+	// name for C code
+	Q_strncpyz( cl->name, Info_ValueForKey (cl->userinfo, "name"), sizeof(cl->name) );
+
+	// rate command
+
+	// if the client is on the same subnet as the server and we aren't running an
+	// internet public server, assume they don't need a rate choke
+	if ( Sys_IsLANAddress( cl->netchan.remoteAddress ) && dedicated->value.integer != 2 )
+	{
+		cl->rate = 99999;	// lans should not rate limit
+	}
+	else
+	{
+		val = Info_ValueForKey (cl->userinfo, "rate");
+		if (strlen(val))
+		{
+			i = atoi(val);
+			cl->rate = i;
+			if (cl->rate < 1000)
+			{
+				cl->rate = 1000;
+			}
+			else if (cl->rate > 90000)
+			{
+				cl->rate = 90000;
+			}
+		}
+		else
+		{
+			cl->rate = 5000;
+		}
+	}
+
+	// snaps command
+	val = Info_ValueForKey (cl->userinfo, "snaps");
+	if (strlen(val))
+	{
+		i = atoi(val);
+		if ( i < 1 )
+		{
+			i = 1;
+		}
+		// CoD2x: from 30 to 40
+		else if ( i > 40 )
+		{
+			i = 40;
+		}
+		// CoD2x: end
+		cl->snapshotMsec = 1000/i;
+	}
+	else
+	{
+		cl->snapshotMsec = 50;
+	}
+
+	// voice command
+	val = Info_ValueForKey (cl->userinfo, "cl_voice");
+	cl->sendVoice = atoi(val) > 0;
+	if ( cl->rate < 5000 )
+		cl->sendVoice = 0;
+
+	// wwwdl command
+	val = Info_ValueForKey (cl->userinfo, "cl_wwwDownload");
+	cl->wwwOk = atoi(val) > 0;
+}
+
+void SV_UserinfoChanged_Win32() {
+	client_t *cl;
+	ASM( movr, cl, "esi" );
+	SV_UserinfoChanged(cl);
+}
+
+
 
 
 void server_unbanAll_command() {
@@ -822,6 +915,13 @@ void server_patch()
     #if COD2X_WIN32
         patch_call(0x00459239, (unsigned int)G_RunFrame_Win32); // SV_SpawnServer, because windows compiler unpack some functions...
     #endif
+
+
+	// Hook the SV_UserInfoChanged function
+	patch_call(ADDR(0x00454626, 0x0808eedb), (unsigned int)WL(SV_UserinfoChanged_Win32, SV_UserinfoChanged)); // SV_DirectConnect
+	patch_call(ADDR(0x00455c32, 0x08090a36), (unsigned int)WL(SV_UserinfoChanged_Win32, SV_UserinfoChanged)); // SV_UpdateUserinfo_f
+
+
 
     // Fix "+smoke" bug
     // When player holds smoke or grenade button but its not available, the player will be able to shoot

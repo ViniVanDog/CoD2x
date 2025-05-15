@@ -25,6 +25,12 @@ inline int Q_stricmp(const char *s1, const char *s2) {
     #endif
 }
 
+inline void Q_strncpyz( char *dest, const char *src, int destsize )
+{
+	strncpy( dest, src, destsize-1 );
+	dest[destsize-1] = 0;
+}
+
 
 inline void Info_SetValueForKey(const char* buffer, const char* keyName, const char* value) {  
     #if COD2X_WIN32
