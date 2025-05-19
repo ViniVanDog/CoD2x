@@ -4,6 +4,10 @@
 #include <wininet.h>
 
 #include "shared.h"
+#include "../shared/cod2_dvars.h"
+#include "../shared/cod2_net.h"
+#include "../shared/cod2_cmd.h"
+#include "../shared/cod2_shared.h"
 
 
 #define cl_updateAvailable (*(dvar_t **)(0x0096b644))

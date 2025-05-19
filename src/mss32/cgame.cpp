@@ -4,7 +4,10 @@
 
 #include "shared.h"
 #include "../shared/cod2_client.h"
+#include "../shared/cod2_dvars.h"
+#include "../shared/cod2_cmd.h"
 #include "../shared/animation.h"
+
 
 
 #define clientState                   (*((clientState_e*)0x00609fe0))

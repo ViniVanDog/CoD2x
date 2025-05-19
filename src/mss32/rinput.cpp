@@ -1,6 +1,7 @@
 #include "rinput.h"
 
 #include "shared.h"
+#include "../shared/cod2_dvars.h"
 
 
 dvar_t*             m_rinput;

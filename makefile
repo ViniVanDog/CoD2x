@@ -198,14 +198,14 @@ $(WIN_MSS32_TARGET): $(WIN_MSS32_OBJECTS) $(WIN_MSS32_OBJ_DIR)/version.res
 $(WIN_MSS32_OBJ_DIR)/%.o: $(WIN_MSS32_SRC_DIR)/%.cpp | $(WIN_MSS32_OBJ_DIR)
 	@echo "Compiling $< for MSS32 (Windows)..."
 	$(WIN_CC) $(WIN_CFLAGS) -MMD -MP -c -o $@ $<
-	@echo   Done.
+	@echo   Done.  "$<"
 	@echo.
 
 # Assemble ASM files
 $(WIN_MSS32_OBJ_DIR)/%.o: $(WIN_MSS32_SRC_DIR)/%.asm | $(WIN_MSS32_OBJ_DIR)
 	@echo "Assembling $< for MSS32 (Windows)..."
 	$(WIN_AS) $(WIN_ASFLAGS) $< -o $@
-	@echo   Done.
+	@echo   Done.  "$<"
 	@echo.
 
 
@@ -265,13 +265,13 @@ build_cod2x_linux: $(SHARED_SRC_DIR)/version.h $(LINUX_TARGET)
 $(LINUX_TARGET): $(LINUX_OBJECTS)
 	@echo "Linking to $@..."
 	$(LINUX_CC) $(LINUX_LFLAGS) -o $@ $^ $(LINUX_LIBS)
-	@echo   Done.
+	@echo   Done.  "$<"
 	@echo ""
 
 $(LINUX_OBJ_DIR)/%.o: $(LINUX_SRC_DIR)/%.cpp | $(LINUX_OBJ_DIR)
 	@echo "Compiling $< for CoD2x (Linux)..."
 	$(LINUX_CC) $(LINUX_CFLAGS) -MMD -MP -c -o $@ $<
-	@echo   Done.
+	@echo   Done.  "$<"
 	@echo ""
 
 
@@ -292,14 +292,14 @@ $(LINUX_OBJ_DIR) $(LINUX_BIN_DIR):
 $(WIN_MSS32_OBJ_DIR)/shared_%.o: $(SHARED_SRC_DIR)/%.cpp | $(WIN_MSS32_OBJ_DIR)
 	@echo "Compiling $< for shared functionality (Windows)..."
 	$(WIN_CC) $(WIN_CFLAGS) -MMD -MP -c -o $@ $<
-	@echo   Done.
+	@echo   Done.  "$<"
 	@echo.
 
 # Compile shared functionality objects for Linux
 $(LINUX_OBJ_DIR)/shared_%.o: $(SHARED_SRC_DIR)/%.cpp | $(LINUX_OBJ_DIR)
 	@echo "Compiling $< for shared functionality (Linux)..."
 	$(LINUX_CC) $(LINUX_CFLAGS) -MMD -MP -c -o $@ $<
-	@echo   Done.
+	@echo   Done.  "$<"
 	@echo ""
 
 

@@ -21,7 +21,7 @@
             "label": "Build MSS32",
             "type": "shell",
             "command": "mingw32-make.exe",
-            "args": ["build_mss32_win"],
+            "args": ["build_mss32_win", "-j${env:NUMBER_OF_PROCESSORS}"],
             "group": {
                 "kind": "build"
             },
@@ -37,7 +37,7 @@
             "label": "Build CoD2x Linux",
             "type": "shell",
             "command": "wsl",
-            "args": ["make", "build_cod2x_linux"],
+            "args": ["make", "build_cod2x_linux", "-j${env:NUMBER_OF_PROCESSORS}"],
             "problemMatcher": ["$gcc"],
             "group": {
                 "kind": "build"

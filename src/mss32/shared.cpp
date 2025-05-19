@@ -2,6 +2,8 @@
 
 #include <windows.h>
 
+#include "../shared/cod2_common.h"
+
 void getErrorMessage(DWORD errorCode, char* buffer, size_t bufferSize) {
     // Temporary buffer for the system error message
     char messageBuffer[256] = {0};

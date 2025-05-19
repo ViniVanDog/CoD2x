@@ -6,6 +6,8 @@
 
 #include "shared.h"
 #include "exception.h"
+#include "../shared/cod2_dvars.h"
+#include "../shared/cod2_cmd.h"
 
 dvar_t* cl_freezeWatch = NULL;
 HANDLE crash_watchdogThreadHandle = NULL;

@@ -1,5 +1,7 @@
 #include "shared.h"
 
+#include <cstdio>
+
 void escape_string(char* buffer, size_t bufferSize, const void* data, size_t length) {
     // Loop through the data char by char and escape invisible characters into buffer
     size_t buffer_index = 0;

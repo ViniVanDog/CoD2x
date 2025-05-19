@@ -1,6 +1,7 @@
 #include "common.h"
 
 #include "shared.h"
+#include "cod2_common.h"
 
 #define MAX_CONSOLE_LINES 32
 #define com_consoleLines ((char**)ADDR(0x00c26110, 0x081a21e0))

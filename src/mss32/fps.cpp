@@ -3,7 +3,8 @@
 #include <windows.h>
 
 #include "shared.h"
-
+#include "../shared/cod2_dvars.h"
+#include "../shared/cod2_client.h"
 
 #define com_maxFps                    (*((dvar_t**)0x00c28b10))
 #define clientState                   (*((clientState_e*)0x00609fe0))

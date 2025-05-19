@@ -5,6 +5,8 @@
 
 #include <stddef.h>
 
+#include "cod2_entity.h"
+
 // Credit: CoD2rev_Server by voron00
 
 

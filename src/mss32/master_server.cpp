@@ -4,6 +4,7 @@
 #include <string>
 
 #include "shared.h"
+#include "../shared/cod2_dvars.h"
 
 dvar_t *cl_masterServer;
 dvar_t *cl_masterPort;

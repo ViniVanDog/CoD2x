@@ -1,6 +1,7 @@
 #include "game.h"
 
 #include "shared.h"
+#include "../shared/cod2_dvars.h"
 
 dvar_t* g_cod2x = NULL;
 

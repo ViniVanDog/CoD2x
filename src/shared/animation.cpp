@@ -4,6 +4,8 @@
 #include <cfloat>
 
 #include "cod2_client.h"
+#include "cod2_dvars.h"
+#include "cod2_common.h"
 
 extern dvar_t* g_cod2x;
 

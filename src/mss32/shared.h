@@ -2,12 +2,13 @@
 #ifndef SHARED_H
 #define SHARED_H
 
-#include "../shared/shared.h"
-#include "hook.h"
-#include "main.h"
-
 #include <windows.h>
 #include <stdio.h>  // For snprintf
+
+#include "../shared/shared.h"
+#include "../shared/cod2_common.h"
+#include "main.h"
+#include "hook.h"
 
 #define APP_MODULE_NAME "mss32.dll"
 

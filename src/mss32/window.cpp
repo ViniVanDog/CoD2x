@@ -6,6 +6,9 @@
 
 #include "shared.h"
 #include "rinput.h"
+#include "../shared/cod2_dvars.h"
+#include "../shared/cod2_client.h"
+
 
 
 #define vid_xpos                    (*((dvar_t**)0x00d77158))

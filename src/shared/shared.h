@@ -78,19 +78,6 @@
 #include "version.h"
 #include "patch.h"
 #include "assembly.h"
-#include "cod2_common.h"
-#include "cod2_shared.h"
-#include "cod2_math.h"
-#include "cod2_dvars.h"
-#include "cod2_entity.h"
-#include "cod2_player.h"
-#include "cod2_cmd.h"
-#include "cod2_file.h"
-#include "cod2_net.h"
-#include "cod2_server.h"
-#if COD2X_WIN32
-#include "cod2_client.h"
-#endif
 
 void escape_string(char* buffer, size_t bufferSize, const void* data, size_t length);
 

@@ -3,6 +3,7 @@
 #include <sys/mman.h> // mprotect
 
 #include "shared.h"
+#include "../shared/cod2_common.h"
 #include "../shared/common.h"
 #include "../shared/server.h"
 #include "../shared/game.h"

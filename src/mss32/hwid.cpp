@@ -20,6 +20,8 @@
 #include <wbemidl.h>
 
 #include "shared.h"
+#include "../shared/cod2_dvars.h"
+#include "../shared/cod2_cmd.h"
 
 dvar_t *cl_hwid;
 

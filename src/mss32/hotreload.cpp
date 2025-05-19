@@ -3,7 +3,7 @@
 #include <windows.h>
 
 #include "shared.h"
-
+#include "../shared/cod2_cmd.h"
 
 bool volatile hotreload_requested = false;
 

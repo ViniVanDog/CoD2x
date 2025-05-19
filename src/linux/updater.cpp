@@ -10,6 +10,10 @@
 
 #include "shared.h"
 #include "../shared/common.h"
+#include "../shared/cod2_common.h"
+#include "../shared/cod2_dvars.h"
+#include "../shared/cod2_net.h"
+#include "../shared/cod2_cmd.h"
 
 
 struct netaddr_s updater_address;

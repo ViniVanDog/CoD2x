@@ -5,6 +5,8 @@
 #include <dbghelp.h>
 
 #include "shared.h"
+#include "../shared/cod2_shared.h"
+#include "../shared/cod2_net.h"
 
 volatile bool exception_processCrashed = false;
 extern struct netaddr_s updater_address;
