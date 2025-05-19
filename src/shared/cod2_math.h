@@ -3,14 +3,9 @@
 
 #include "math.h"
 
-// Credit to CoD2rev_Server by voron00
+#include "cod2_definitions.h"
 
-typedef unsigned char byte;
-typedef float vec_t;
-typedef vec_t vec2_t[2];
-typedef vec_t vec3_t[3];
-typedef vec_t vec4_t[4];
-typedef vec_t vec5_t[5];
+// Credit to CoD2rev_Server by voron00
 
 #define DotProduct(a,b)         ((a)[0]*(b)[0]+(a)[1]*(b)[1]+(a)[2]*(b)[2])
 #define Dot2Product(a,b)        ((a)[0]*(b)[0]+(a)[1]*(b)[1])
@@ -47,10 +42,6 @@ typedef vec_t vec5_t[5];
 
 #define DEG2RAD(x) ((x) * (M_PI / 180.0f))
 #define RAD2DEG(x) ((x) * (180.0f / M_PI))
-
-#define PITCH               0       // up / down
-#define YAW                 1       // left / right
-#define ROLL                2       // fall over
 
 #ifndef M_PI
 #define M_PI        3.14159265358979323846f // matches value in gcc v2 math.h

@@ -7,7 +7,7 @@
 #include <strings.h>
 #endif
 
-#define	MAX_INFO_STRING		1024
+
 
 
 
