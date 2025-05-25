@@ -76,7 +76,7 @@
             "label": "Build MSS32 RELEASE",
             "type": "shell",
             "command": "mingw32-make.exe",
-            "args": ["build_mss32_win", "DEBUG=0"],
+            "args": ["build_mss32_win", "-j${env:NUMBER_OF_PROCESSORS}", "DEBUG=0"],
             "group": {
                 "kind": "build"
             },
@@ -91,7 +91,7 @@
             "label": "Build Linux RELEASE",
             "type": "shell",
             "command": "wsl",
-            "args": ["make", "build_cod2x_linux", "DEBUG=0"],
+            "args": ["make", "build_cod2x_linux", "-j${env:NUMBER_OF_PROCESSORS}", "DEBUG=0"],
             "group": {
                 "kind": "build"
             },
