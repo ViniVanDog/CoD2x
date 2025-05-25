@@ -5,6 +5,12 @@ CoD2x is a modification of Call of Duty 2. It is build on top of 1.3 version.
 
 It focuses on fixing bugs and adding new features to the game.
 
+# Version history
+- 2025-05-25 - 1.4.3.1 - current
+- 2025-03-06 - 1.4.2.3
+- 2025-03-02 - 1.4.2.2
+- 2025-01-23 - 1.4.2.1
+- 2025-01-23 - 1.4.1.1
 
 
 # Features
@@ -21,14 +27,32 @@ It focuses on fixing bugs and adding new features to the game.
 - Fixed black screen on startup - caused by missing microphone / sound device
 - Added requirement to run the game as administrator to fix problems with VirtualStore folder and the need to have write access into Program Files folder (as it was possible in Windows XP)
   - ![alt text](images/cod2-run-as-admin.png)
-- Crouch to stand peak bug fix - matching the animation time to be the same as in 1st view 
-  - ![alt text](images/cod2-clip-fix.gif)
 - Fixed "+smoke" bug
+- Animations - https://www.youtube.com/watch?v=oQkTuwQnI-8
+  - Reworked the player character animations
+    - Stance animation
+      - crouch-prone peak
+      - crouch-stand peak
+      - prone-crouch peak
+        - ![alt text](images/cod2-stance-fix.gif)
+        - ![alt text](images/cod2-clip-fix.gif)
+    - No leg swing
+    - Nade throwing animation is canceled imidiately when the player crouches / prones
+    - Head movement on ladder - head is rotated according to player's yaw angle
+    - Prone high body fixed
+    - Weapon stabilization
+      - Torso rotation now match the player's yaw angle
+      - It fixes weapon "waving"
+      - It fixes diagonal bug
+- Fixed "iwd/sum name mismatch" error caused by too many iwd files
+- Fixed negative protocol number when formating IP and port
+- Disabled console prints:
+  - localized string warning
+  - Bot warning prints
+  - "==== ShutdownGame ===="
+  - "gamename: Call of Duty 2"
+  - "gamedate: Jun 23 2006"
 
-##### Changes since 1.4.3.1-test.1
-- ![alt text](images/cod2-stance-fix.gif)
-- https://www.youtube.com/watch?v=oQkTuwQnI-8
-- [![alt text](https://img.youtube.com/vi/oQkTuwQnI-8/0.jpg)](https://www.youtube.com/watch?v=oQkTuwQnI-8)
 
 #### Improvements
 - Added windowed and borderless window mode:
@@ -53,9 +77,12 @@ It focuses on fixing bugs and adding new features to the game.
     - ![alt text](images/cod2-error-dvars-1280.png)
 - Added informative texts into console with changes that has been applied when connected to the server:
     - ![alt text](images/cod2-changes-console.png)
-
-##### Improvements since 1.4.3.1-test.1
+- Added crash reporter
+  - ![alt text](images/cod2-crash-error.png)
+- Added process freeze detection
+  - ![alt text](images/cod2-freeze-error.png)
 - Tickrate
+  - ![alt text](images/cod2-tick-wireshark.png)
   - Server FPS maximum increased from 30 to 40 (`sv_fps 40`)
   - Client max snaps increased from 30 to 40 (`snaps 40`)
   - Client max packet value increased from 100 to 125 (`cl_maxpackets 125`)
@@ -75,14 +102,13 @@ It focuses on fixing bugs and adding new features to the game.
     - `sv_master3` is customizable
 - New cvar `sv_cracked` to make the server accept players with invalid CDKEY
 - New cvar `showPacketStrings` to show network communication data
-- Disabled localized string warning and bot warning prints
 - New commands `/increase` and `/decrease` to increase or decrease the value of a cvar
 - Reversed function for third person, added new cvar `cg_thirdPersonMode 1` that rotates directly around player without collision with the world
 
 
 # How to install (client on Windows)
 1. You need original Call of Duty 2 with version [1.3](https://www.moddb.com/games/call-of-duty-2/downloads/call-of-duty-2-pc-patch-v-13) installed.
-2. Download latest version of CoD2x - [CoD2x_1.4.2.3_windows.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.2.3/CoD2x_1.4.2.3_windows.zip)
+2. Download latest version of CoD2x - [CoD2x_1.4.3.1_windows.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.3.1/CoD2x_1.4.3.1_windows.zip)
 3. Extract these files from the archive to the Call of Duty 2 folder, replacing any existing file:
     - 📄 mss32.dll
     - 📄 mss32_original.dll
@@ -111,7 +137,7 @@ It focuses on fixing bugs and adding new features to the game.
 
 
 # How to install (server on Linux)
-1. Download latest version of CoD2x - [CoD2x_1.4.2.3_linux.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.2.3/CoD2x_1.4.2.3_linux.zip)
+1. Download latest version of CoD2x - [CoD2x_1.4.3.1_linux.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.3.1/CoD2x_1.4.3.1_linux.zip)
 2. Extract this file from the archive to the Call of Duty 2 folder:
     - 📄 libCoD2x.so
 3. Final structure should look like this:
