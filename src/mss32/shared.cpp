@@ -42,7 +42,7 @@ void showErrorBox(const char *file, const char *function, int line, const char *
     char fullMessage[1024 + 512];
     snprintf(fullMessage, sizeof(fullMessage), errorTemplate, message, file, function, line);
 
-    MessageBox(NULL, fullMessage, APP_NAME " - Error", MB_ICONERROR | MB_OK);
+    MessageBox(NULL, fullMessage, APP_NAME " - Error", MB_ICONERROR | MB_OK | MB_TOPMOST);
 }
 
 
