@@ -14,7 +14,7 @@ HANDLE crash_watchdogThreadHandle = NULL;
 volatile DWORD freeze_lastHeartbeat = 0;   // Updated by the main thread
 volatile bool freeze_exitThread = false;
 
-extern volatile bool exception_processCrashed;
+extern volatile int exception_processCrashed;
 extern volatile bool hotreload_requested;
 
 
