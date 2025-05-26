@@ -42,7 +42,7 @@ void download_and_swap_async(const char *current_version, const char *new_versio
     off += snprintf(cmd + off, sizeof(cmd) - off, "echo \"Url:             %s\"; ", url);
     off += snprintf(cmd + off, sizeof(cmd) - off, "echo \"Destination:     %s\"; ", libCoD2x_new);
     off += snprintf(cmd + off, sizeof(cmd) - off, "rm -f \"%s\"; ", libCoD2x_old); // Remove old backup
-    off += snprintf(cmd + off, sizeof(cmd) - off, "curl -o \"%s\" -L -s -S -f -w \"Downloaded: %%{size_download} bytes at %%{speed_download} bytes/sec in %%{time_total} seconds\\n\" \"%s\"; ", libCoD2x_new, url); // Download new library, -L follow redirects, -s silent, -S show errors, -f fail on http errors, -w output format
+    off += snprintf(cmd + off, sizeof(cmd) - off, "curl --connect-timeout 2 --max-time 8 --retry 3 --retry-delay 2 -o \"%s\" -L -s -S -f -w \"Downloaded: %%{size_download} bytes at %%{speed_download} bytes/sec in %%{time_total} seconds\\n\" \"%s\"; ", libCoD2x_new, url);
     off += snprintf(cmd + off, sizeof(cmd) - off, "mv -f \"%s\" \"%s\"; ", LIB_PATH, libCoD2x_old); // Move current lib to .old
     off += snprintf(cmd + off, sizeof(cmd) - off, "mv -f \"%s\" \"%s\"; ", libCoD2x_new, LIB_PATH); // Replace with new lib
     off += snprintf(cmd + off, sizeof(cmd) - off, "echo \"==========================================================================================\"; ");
