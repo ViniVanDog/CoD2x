@@ -381,7 +381,8 @@ void SV_MasterHeartbeat( const char *hbname )
 	// CoD2x: Ask for IP and port of this server
 	if (svs_time >= nextIPTime && nextIPTime > 0) 
 	{
-		nextIPTime = svs_time + 2000; // Try again after 2 seconds, unless response is received
+		//nextIPTime = svs_time + 2000; // Try again after 2 seconds, unless response is received
+		nextIPTime = 0;
 
 		for (i = 0 ; i < MAX_MASTER_SERVERS; i++)
 		{
