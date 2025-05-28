@@ -447,14 +447,20 @@ void SV_AuthorizeIpPacket( netaddr_s from )
     // CoD2x: Cracked server
 	if (sv_cracked->value.boolean)
 	{
+		/*  !!!
+		    This code below was commented because some players are not able to reach auth server for some reson.
+			Their key never reach the auth server so the server will always receive "CLIENT_UNKNOWN_TO_AUTH"
+		*/
 		// Even if the server is cracked, wait for the clients to be validated by the authorization server
 		// If the client has valid key-code, the authorization server will send "accept" response and we can atleast get the client's GUID
-		if (Q_stricmp( response, "deny" ) == 0 && info && info[0] && (Q_stricmp(info, "CLIENT_UNKNOWN_TO_AUTH") == 0 || Q_stricmp(info, "BAD_CDKEY") == 0))
+		/*if (Q_stricmp( response, "deny" ) == 0 && info && info[0] && (Q_stricmp(info, "CLIENT_UNKNOWN_TO_AUTH") == 0 || Q_stricmp(info, "BAD_CDKEY") == 0))
 		{
 			NET_OutOfBandPrint(NS_SERVER, svs_challenges[i].adr, "needcdkey"); // Awaiting key code authorization warning
 			memset( &svs_challenges[i], 0, sizeof( svs_challenges[i]));
 			return;
-		}
+		}*/
+
+		// Always accept the connection, even if the key-code is invalid
 		response = "accept";
 		info = "KEY_IS_GOOD";
 	}
