@@ -141,12 +141,16 @@ LINUX_LIBS = -ldl -pthread
 # Build Targets and Rules
 # ========================================================================================================
 
+
 # Default target
-all: build_mss32_win build_cod2x_linux
+all: prebuild build_mss32_win build_cod2x_linux
 	@echo "Build completed for all targets."
 
+# Prebuild target to ensure version.h is updated when makefile changes.
+prebuild: $(SHARED_SRC_DIR)/version.h
+	@echo "Prebuild complete."
 
-
+# Rule to generate version.h every time the makefile changes
 $(SHARED_SRC_DIR)/version.h: makefile
 	@echo Generating version.h...
 
@@ -166,7 +170,7 @@ $(SHARED_SRC_DIR)/version.h: makefile
 # ========================================================================================================
 
 # MSS32 Windows target
-build_mss32_win: $(SHARED_SRC_DIR)/version.h $(WIN_MSS32_TARGET)
+build_mss32_win: prebuild $(WIN_MSS32_TARGET)
 	@echo "MSS32 (Windows) build complete."
 	@echo.
 	@echo.
@@ -258,7 +262,7 @@ $(WIN_MSS32_OBJ_DIR) $(WIN_BIN_DIR):
 # ========================================================================================================
 
 # CoD2x Linux target
-build_cod2x_linux: $(SHARED_SRC_DIR)/version.h $(LINUX_TARGET)
+build_cod2x_linux: prebuild $(LINUX_TARGET)
 	@echo "CoD2x (Linux) build complete."
 	@echo ""
 
