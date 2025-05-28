@@ -22,6 +22,7 @@
 #define svs_nextHeartbeatTime 					(*((int*)(ADDR(0x00d35754, 0x084230d4))))
 #define svs_nextStatusResponseTime 				(*((int*)(ADDR(0x00d35758, 0x084230d8))))
 #define svs_clients 							(*((client_t (*)[64])(ADDR(0x00d3570c, 0x0842308c))))
+#define originalAuthorizeServerUrl 				((const char*)(ADDR(0x005a3c90, 0x08149afb)))
 
 #define MAX_MASTER_SERVERS  3
 dvar_t*		sv_master[MAX_MASTER_SERVERS];
@@ -875,6 +876,11 @@ void server_init()
 	sv_master[2] = Dvar_RegisterString("sv_master3", "", 							(dvarFlags_e)(DVAR_CHANGEABLE_RESET));
 
 	sv_cracked = Dvar_RegisterBool("sv_cracked", false, (dvarFlags_e)(DVAR_CHANGEABLE_RESET));
+
+	// If the original binary has been cracked by changing the authorize server URL, set sv_cracked to true to maintain the same behavior
+	if (strncmp(originalAuthorizeServerUrl, SERVER_ACTIVISION_AUTHORIZE_URI, 26) != 0) {
+		Dvar_SetBool(sv_cracked, true);
+	}
 	
 	showpacketstrings = Dvar_RegisterBool("showPacketStrings", false, DVAR_CHANGEABLE_RESET);
 
