@@ -744,8 +744,8 @@ inline int SV_GetPlayerStance(int num) {
 
 inline void G_GetPlayerViewOrigin(gentity_s* ent, float* origin) {
 	WL(
-		ASM_CALL(RETURN_VOID, 0x004fdd30, 1, ESI(origin), PUSH(ent)),
-		ASM_CALL(RETURN_VOID, 0x080f8916, 2, PUSH(ent), PUSH(origin))
+		ASM_CALL(VOID, 0x004fdd30, 1, ESI(origin), PUSH(ent)),
+		ASM_CALL(VOID, 0x080f8916, 2, PUSH(ent), PUSH(origin))
 	)
 }
 

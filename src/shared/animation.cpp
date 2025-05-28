@@ -698,12 +698,12 @@ void BG_Player_DoControllersInternal(entityState_s *es, clientInfo_t *ci, client
 
 void DObjSetControlTagAngles(void *obj, int *partBits, unsigned int boneIndex, float *angles)
 {
-	ASM_CALL(RETURN_VOID, ADDR(0x00488f80, 0x080bbea4), WL(2, 4), WL(EBX, PUSH)(obj), PUSH(partBits), WL(EAX, PUSH)(boneIndex), PUSH(angles));
+	ASM_CALL(VOID, ADDR(0x00488f80, 0x080bbea4), WL(2, 4), WL(EBX, PUSH)(obj), PUSH(partBits), WL(EAX, PUSH)(boneIndex), PUSH(angles));
 }
 
 void DObjSetLocalTag(void *obj, int *partBits, unsigned int boneIndex, const float *trans, const float *angles)
 {
-	ASM_CALL(RETURN_VOID, ADDR(0x00488ff0, 0x080bbf22), WL(3, 5), WL(EBX, PUSH)(obj), PUSH(partBits), WL(EAX, PUSH)(boneIndex), PUSH(trans), PUSH(angles));
+	ASM_CALL(VOID, ADDR(0x00488ff0, 0x080bbf22), WL(3, 5), WL(EBX, PUSH)(obj), PUSH(partBits), WL(EAX, PUSH)(boneIndex), PUSH(trans), PUSH(angles));
 }
 
 /**
@@ -1338,7 +1338,7 @@ void BG_SetNewAnimation_Win32(clientInfo_t* ci, int iAnimNumNew, int32_t isCompl
     BG_SetNewAnimation(lf, ci, iAnimNumNew, isComplete);
 
     // Call the original function
-	ASM_CALL(RETURN_VOID, 0x004f9850, 3, EBX(lf), PUSH(ci), PUSH(iAnimNumNew), PUSH(isComplete));
+	ASM_CALL(VOID, 0x004f9850, 3, EBX(lf), PUSH(ci), PUSH(iAnimNumNew), PUSH(isComplete));
 }
 
 void BG_SetNewAnimation_Linux(clientInfo_t* ci, lerpFrame_t* lf, int iAnimNumNew, int32_t isComplete) {
@@ -1346,7 +1346,7 @@ void BG_SetNewAnimation_Linux(clientInfo_t* ci, lerpFrame_t* lf, int iAnimNumNew
     BG_SetNewAnimation(lf, ci, iAnimNumNew, isComplete);
 
     // Call the original function
-	ASM_CALL(RETURN_VOID, 0x080d9d00, 4, PUSH(ci), PUSH(lf), PUSH(iAnimNumNew), PUSH(isComplete));
+	ASM_CALL(VOID, 0x080d9d00, 4, PUSH(ci), PUSH(lf), PUSH(iAnimNumNew), PUSH(isComplete));
 }
 
 

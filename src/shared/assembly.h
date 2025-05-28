@@ -50,7 +50,7 @@ If the assembly code modifies global memory (e.g., via pointers), add "memory" t
 /*
 Macros to make inline function call easy.
 Example:
-ASM_CALL(RETURN_VOID, 0x00434460, 1, EAX(var1), ECX(var2), PUSH(var3));
+ASM_CALL(VOID, 0x00434460, 1, EAX(var1), ECX(var2), PUSH(var3));
 */
 #define EAX(var) ASM__mov("eax", var)
 #define EBX(var) ASM__mov("ebx", var)
@@ -60,7 +60,7 @@ ASM_CALL(RETURN_VOID, 0x00434460, 1, EAX(var1), ECX(var2), PUSH(var3));
 #define ESI(var) ASM__mov("esi", var)
 #define PUSH(var) ASM__push(var)
 #define RETURN(var) ASM__movr(var, "eax")
-#define RETURN_VOID
+#define VOID
 
 // Push 32-bit word from a struct by offset.
 #define ASM_PUSH_OFFSET(ptr, offset)                         \
@@ -113,20 +113,20 @@ ASM_CALL(RETURN_VOID, 0x00434460, 1, EAX(var1), ECX(var2), PUSH(var3));
 #define ASM_CALL_0(ret, func)  \
     const void* original_func = (void*)func; \
     ASM__call(original_func); \
-    ret; \
+    ret;
 
-#define ASM_CALL_12(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa, ab )   ASM_CALL_13(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa, ab, RETURN_VOID)
-#define ASM_CALL_11(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa )       ASM_CALL_12(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa, RETURN_VOID)
-#define ASM_CALL_10(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8, a9 )           ASM_CALL_11(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8, a9, RETURN_VOID)
-#define ASM_CALL_9(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8 )                ASM_CALL_10(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8, RETURN_VOID)
-#define ASM_CALL_8(ret, func, stack, a1, a2, a3, a4, a5, a6, a7 )                    ASM_CALL_9(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, RETURN_VOID)
-#define ASM_CALL_7(ret, func, stack, a1, a2, a3, a4, a5, a6 )                        ASM_CALL_8(ret, func, stack, a1, a2, a3, a4, a5, a6, RETURN_VOID)
-#define ASM_CALL_6(ret, func, stack, a1, a2, a3, a4, a5 )                            ASM_CALL_7(ret, func, stack, a1, a2, a3, a4, a5, RETURN_VOID)
-#define ASM_CALL_5(ret, func, stack, a1, a2, a3, a4 )                                ASM_CALL_6(ret, func, stack, a1, a2, a3, a4, RETURN_VOID)
-#define ASM_CALL_4(ret, func, stack, a1, a2, a3 )                                    ASM_CALL_5(ret, func, stack, a1, a2, a3, RETURN_VOID)
-#define ASM_CALL_3(ret, func, stack, a1, a2 )                                        ASM_CALL_4(ret, func, stack, a1, a2, RETURN_VOID)
-#define ASM_CALL_2(ret, func, stack, a1 )                                            ASM_CALL_3(ret, func, stack, a1, RETURN_VOID)
-#define ASM_CALL_1(ret, func, stack )                                                ASM_CALL_2(ret, func, stack, RETURN_VOID)
+#define ASM_CALL_12(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa, ab )   ASM_CALL_13(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa, ab, VOID)
+#define ASM_CALL_11(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa )       ASM_CALL_12(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa, VOID)
+#define ASM_CALL_10(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8, a9 )           ASM_CALL_11(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8, a9, VOID)
+#define ASM_CALL_9(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8 )                ASM_CALL_10(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, a8, VOID)
+#define ASM_CALL_8(ret, func, stack, a1, a2, a3, a4, a5, a6, a7 )                    ASM_CALL_9(ret, func, stack, a1, a2, a3, a4, a5, a6, a7, VOID)
+#define ASM_CALL_7(ret, func, stack, a1, a2, a3, a4, a5, a6 )                        ASM_CALL_8(ret, func, stack, a1, a2, a3, a4, a5, a6, VOID)
+#define ASM_CALL_6(ret, func, stack, a1, a2, a3, a4, a5 )                            ASM_CALL_7(ret, func, stack, a1, a2, a3, a4, a5, VOID)
+#define ASM_CALL_5(ret, func, stack, a1, a2, a3, a4 )                                ASM_CALL_6(ret, func, stack, a1, a2, a3, a4, VOID)
+#define ASM_CALL_4(ret, func, stack, a1, a2, a3 )                                    ASM_CALL_5(ret, func, stack, a1, a2, a3, VOID)
+#define ASM_CALL_3(ret, func, stack, a1, a2 )                                        ASM_CALL_4(ret, func, stack, a1, a2, VOID)
+#define ASM_CALL_2(ret, func, stack, a1 )                                            ASM_CALL_3(ret, func, stack, a1, VOID)
+#define ASM_CALL_1(ret, func, stack )                                                ASM_CALL_2(ret, func, stack, VOID)
 
 #define GET_ASM_CALL_MACRO(ret, func, stack, _1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,NAME,...) NAME
 
@@ -134,15 +134,16 @@ ASM_CALL(RETURN_VOID, 0x00434460, 1, EAX(var1), ECX(var2), PUSH(var3));
  * Call a function with a variable number of arguments.
  * 
  * Example:
- * - `ASM_CALL(RETURN_VOID, 0x00434460);`
- * - `ASM_CALL(RETURN_VOID, 0x00434460, 1, PUSH(var1));`
- * - `ASM_CALL(RETURN_VOID, 0x00434460, 1, EAX(var1), PUSH(var2));`
+ * - `ASM_CALL(VOID, 0x00434460);` - calling void function with no arguments and void return value
+ * - `ASM_CALL(RETURN(varName), 0x00434460);` - calling function with return value in `varName`
+ * - `ASM_CALL(RETURN(varName), 0x00434460, 1, PUSH(var1));` - calling function with return value in `varName`, one argument pushed on the stack
+ * - `ASM_CALL(RETURN(varName), 0x00434460, 1, EAX(var1), PUSH(var2));` - calling function with return value in `varName`, one argument in EAX and one pushed on the stack
  * 
  * Parameters:
- * - `Param 1`: ret 1. Return value - can be RETURN_VOID or RETURN(variable)
- * - `Param 2`: func 2. Function address
- * - `Param 3`: stack 3. Number of arguments pushed on the stack
- * - `Param 4`: ... 4. Arguments of the function - can be PUSH(variable) or EAX(variable), ECX(variable), etc.
+ * - Param 1. `ret` – Return value - can be VOID or RETURN(variable)
+ * - Param 2. `func` – Function address
+ * - Param 3. `stack` – Number of arguments pushed on the stack
+ * - Param 4. `...` – Arguments of the function - can be PUSH(variable) or EAX(variable), ECX(variable), etc.
  */
 #define ASM_CALL(...) \
     GET_ASM_CALL_MACRO(__VA_ARGS__, \

@@ -107,8 +107,8 @@ static_assert((sizeof(client_t) == 0xb1064));
 /** Sends a command string to a client. If clientNum is -1, then the command is sent to everybody */
 inline void SV_GameSendServerCommand( int clientNum, int svscmd_type, const char *text ) {
     WL(
-        ASM_CALL(RETURN_VOID, 0x004567b0, 0, EAX(clientNum), EDX(svscmd_type), ECX(text)),
-        ASM_CALL(RETURN_VOID, 0x080917aa, 3, PUSH(clientNum), PUSH(svscmd_type), PUSH(text))
+        ASM_CALL(VOID, 0x004567b0, 0, EAX(clientNum), EDX(svscmd_type), ECX(text)),
+        ASM_CALL(VOID, 0x080917aa, 3, PUSH(clientNum), PUSH(svscmd_type), PUSH(text))
     )
 };
 
@@ -121,8 +121,8 @@ inline void SV_SetClientCvar(int clientNum, const char *cvarName, const char *cv
 // Get user info
 inline void SV_GetUserInfo(int index, char *buffer, int bufferSize) {
     WL(
-        ASM_CALL(RETURN_VOID, 0x004580b0, 0, EAX(index), EBX(buffer), EDI(bufferSize)),
-        ASM_CALL(RETURN_VOID, 0x08092C04, 3, PUSH(index), PUSH(buffer), PUSH(bufferSize))
+        ASM_CALL(VOID, 0x004580b0, 0, EAX(index), EBX(buffer), EDI(bufferSize)),
+        ASM_CALL(VOID, 0x08092C04, 3, PUSH(index), PUSH(buffer), PUSH(bufferSize))
     )
 }
 
