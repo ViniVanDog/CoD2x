@@ -33,21 +33,21 @@ int 		nextIPTime = 0;
 
 void SV_VoicePacket(netaddr_s from, msg_t *msg) { 
 	WL(
-		ASM_CALL(VOID, 0x0045a750, 5, EAX(msg), PUSH_STRUCT(from, 5)),	// on Windows, the msg is passed in EAX
-		ASM_CALL(VOID, 0x08094b56, 6, PUSH_STRUCT(from, 5), PUSH(msg))
+		ASM_CALL(RETURN_VOID, 0x0045a750, 5, EAX(msg), PUSH_STRUCT(from, 5)),	// on Windows, the msg is passed in EAX
+		ASM_CALL(RETURN_VOID, 0x08094b56, 6, PUSH_STRUCT(from, 5), PUSH(msg))
 	);
 }
 
 void SVC_Status(netaddr_s from) {
-	ASM_CALL(VOID, ADDR(0x0045a880, 0x08094c84), 5, PUSH_STRUCT(from, 5));
+	ASM_CALL(RETURN_VOID, ADDR(0x0045a880, 0x08094c84), 5, PUSH_STRUCT(from, 5));
 }
 
 void SVC_Info(netaddr_s from) {
-	ASM_CALL(VOID, ADDR(0x0045ae80, 0x0809537c), 5, PUSH_STRUCT(from, 5));
+	ASM_CALL(RETURN_VOID, ADDR(0x0045ae80, 0x0809537c), 5, PUSH_STRUCT(from, 5));
 }
 
 void SVC_RemoteCommand(netaddr_s from) {
-	ASM_CALL(VOID, ADDR(0x004b8ac0, 0x08097188), 5, PUSH_STRUCT(from, 5));
+	ASM_CALL(RETURN_VOID, ADDR(0x004b8ac0, 0x08097188), 5, PUSH_STRUCT(from, 5));
 }
 
 bool SV_IsBannedGuid(int guid) {
@@ -539,7 +539,7 @@ void SV_AuthorizeIpPacket( netaddr_s from )
 // Sends 'getIpAuthorize %i %i.%i.%i.%i "%s" %i PB "%s"' to the authorization server
 void SV_AuthorizeRequest(netaddr_s from, int challenge, const char* PBHASH) {
 	#if COD2X_WIN32
-		ASM_CALL(VOID, 0x00452c80, 5, ESI(challenge), EDI(PBHASH), PUSH_STRUCT(from, 5));
+		ASM_CALL(RETURN_VOID, 0x00452c80, 5, ESI(challenge), EDI(PBHASH), PUSH_STRUCT(from, 5));
 	#endif
 	#if COD2X_LINUX
 		((void (*)(netaddr_s, int, const char*))(0x0808cfc6))(from, challenge, PBHASH);
@@ -754,7 +754,7 @@ int Sys_SendPacket(uint32_t length, const void* data, netaddr_s addr) {
     return ret;
 }
 void NET_SendLoopPacket(netsrc_e mode, int length, const void *data, netaddr_s to ) {
-    ASM_CALL(VOID, ADDR(0x00448800, 0x0806c722), WL(7, 8), 
+    ASM_CALL(RETURN_VOID, ADDR(0x00448800, 0x0806c722), WL(7, 8), 
         WL(EAX, PUSH)(mode), PUSH(length), PUSH(data), PUSH_STRUCT(to, 5));
 }
 
@@ -849,7 +849,7 @@ void SV_SpawnServer(char* mapname) {
 
 void G_RunFrame(int time) {
     // Call the original function
-    ASM_CALL(VOID, ADDR(0x004fd1b0, 0x0810a13a), WL(0, 1), WL(EAX, PUSH)(time));
+    ASM_CALL(RETURN_VOID, ADDR(0x004fd1b0, 0x0810a13a), WL(0, 1), WL(EAX, PUSH)(time));
 }
 
 void G_RunFrame_Win32() {

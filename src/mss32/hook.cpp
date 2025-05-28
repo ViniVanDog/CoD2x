@@ -36,7 +36,7 @@ void hook_CL_Frame()
     ASM( movr, time, "esi" );
 
     // Call the original function
-    ASM_CALL(VOID, 0x0040f850, 1, ESI(time));
+    ASM_CALL(RETURN_VOID, 0x0040f850, 1, ESI(time));
 }
 
 
@@ -69,7 +69,7 @@ void hook_Com_Frame()
     cgame_frame();
 
     // Call the original function
-    ASM_CALL(VOID, 0x00434f70);
+    ASM_CALL(RETURN_VOID, 0x00434f70);
 }
 
 
@@ -130,7 +130,7 @@ void hook_CL_Init() {
     master_server_init();
     
     if (!DLL_HOTRELOAD) {
-        ASM_CALL(VOID, 0x00410a10);
+        ASM_CALL(RETURN_VOID, 0x00410a10);
     }
 }
 
@@ -153,7 +153,7 @@ void hook_SV_Init() {
     animation_init();
 
     if (!DLL_HOTRELOAD) {
-        ASM_CALL(VOID, 0x004596d0);
+        ASM_CALL(RETURN_VOID, 0x004596d0);
     }
 }
 
@@ -170,7 +170,7 @@ void hook_Com_Init(const char* cmdline) {
 
     // Call the original function
     if (!DLL_HOTRELOAD) {
-        ASM_CALL(VOID, 0x00434460, 1, PUSH(cmdline));
+        ASM_CALL(RETURN_VOID, 0x00434460, 1, PUSH(cmdline));
     } else {
         hook_SV_Init();
         if (dedicated->value.boolean == 0)

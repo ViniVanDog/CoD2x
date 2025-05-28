@@ -18,7 +18,7 @@
 void __cdecl hook_Com_Frame() {
 
     // Call the original function
-    ASM_CALL(VOID, 0x080626f4);
+    ASM_CALL(RETURN_VOID, 0x080626f4);
 }
 
 
@@ -39,7 +39,7 @@ void hook_SV_Init() {
     game_init();
     animation_init();
 
-    ASM_CALL(VOID, 0x08093adc);
+    ASM_CALL(RETURN_VOID, 0x08093adc);
 }
 
 
@@ -52,7 +52,7 @@ void __cdecl hook_Com_Init(char* cmdline) {
     Com_Printf("Command line: '%s'\n", cmdline);
     
     // Call the original function
-    ASM_CALL(VOID, 0x080620c0, 1, PUSH(cmdline));
+    ASM_CALL(RETURN_VOID, 0x080620c0, 1, PUSH(cmdline));
 
     updater_checkForUpdate(); // depends on dedicated and network system
 }
