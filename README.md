@@ -166,7 +166,11 @@ It focuses on fixing bugs and adding new features to the game.
 2. Copy .iwd files from original Call of Duty 2 1.3 main folder to `./bin/windows/main` folder in this repository (iw_01..iw_15 and localized_english_iw00..localized_english_iw11)
 3. Instal MinGW-w64 by Brecht Sanders [winlibs-i686-posix-dwarf-gcc-14.2.0-mingw-w64msvcrt-12.0.0-r2](https://github.com/brechtsanders/winlibs_mingw/releases/download/14.2.0posix-19.1.1-12.0.0-msvcrt-r2/winlibs-i686-posix-dwarf-gcc-14.2.0-mingw-w64msvcrt-12.0.0-r2.zip) into `./tools/mingw`
 
-4. Install WSL (Windows Subsystem for Linux) with Ubuntu 24.04 LTS
+4. Install WSL (Windows Subsystem for Linux)
+  - `wsl --install Ubuntu-18.04`
+
+
+5. Run these commands in WSL:
     - `wsl --install` (should install 'Ubuntu' instance name)
     - `sudo apt update`
     - `sudo dpkg --add-architecture i386`
@@ -176,17 +180,18 @@ It focuses on fixing bugs and adding new features to the game.
     - `sudo apt install -y gcc-multilib libc6-dev:i386` (development libraries to compile new code)
     - `sudo apt-get install gcc-multilib g++-multilib` (some dependencies for compiling)
     - `exit`
-    - `wsl --set-default Ubuntu`
+    - `wsl --set-default Ubuntu-18.04`
     - |
     - Setup tmux: (enable mouse scrolling)
     - `nano ~/.tmux.conf`
-    - `set -g mouse on`
+      - write `set -g mouse on`
+      - Ctrl+X, Y, Enter
     - `tmux source-file ~/.tmux.conf`
     - |
     - How to get IP of WSL virtual machine to connect from Windows to Linux CoD2x server: 
     - `ip addr show eth0 | grep inet | awk '{ print $2; }' | sed 's/\/.*$//'`
-5. Run VSCode as administrator (:warning: needed to be able to run CoD2 also as administrator while debugging)
-6. Use VSCode to compile, run and debug
+6. Run VSCode as administrator (:warning: needed to be able to run CoD2 also as administrator while debugging)
+7. Use VSCode to compile, run and debug
 
 # Repository layout
 - 📁 **bin**
