@@ -293,7 +293,7 @@ LRESULT CALLBACK CoD2WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         {
             // In windowed borderless mode the menu cursor is based on the system cursor.
             // Since we are hiding the system cursor, it wont automatically activate the window when clicking, so do it manually
-            if (r_fullscreen->value.integer == 0 && !win_isActivated) {
+            if (r_fullscreen->value.boolean == 0 && !win_isActivated) {
                 SetForegroundWindow(hwnd);
             }
             break;
@@ -315,7 +315,7 @@ LRESULT CALLBACK CoD2WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
         // Called when the window is moved
         case WM_MOVE: {
-            if (r_fullscreen->value.integer == 0) // Windowed mode
+            if (r_fullscreen->value.boolean == 0) // Windowed mode
             {
                 RECT lpRect;
                 lpRect.left = 0;
