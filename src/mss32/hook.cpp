@@ -19,6 +19,7 @@
 #include "../shared/server.h"
 #include "../shared/game.h"
 #include "../shared/animation.h"
+#include "../shared/cod2_dvars.h"
 
 HMODULE hModule;
 unsigned int gfx_module_addr;
@@ -29,7 +30,7 @@ bool hook_hotreload_init = false;
  * CL_Frame
  * Is called in the main loop every frame after processing events for client
  */
-void __cdecl hook_CL_Frame() 
+void hook_CL_Frame() 
 {
     int time;
     ASM( movr, time, "esi" );
@@ -43,13 +44,15 @@ void __cdecl hook_CL_Frame()
  * Com_Frame
  * Is called in the main loop every frame.
  */
-void __cdecl hook_Com_Frame() 
+void hook_Com_Frame() 
 {
     #if DEBUG
         // First frame from newly loaded DLL, we need to initialize
         if (hook_hotreload_init) {
             hook_hotreload_init = false;
+            
             hook_Com_Init("");
+
             hook_gfxDll();
         }
 
@@ -66,7 +69,7 @@ void __cdecl hook_Com_Frame()
     cgame_frame();
 
     // Call the original function
-	((void (__cdecl *)())0x00434f70)();
+    ASM_CALL(RETURN_VOID, 0x00434f70);
 }
 
 
@@ -74,9 +77,9 @@ void __cdecl hook_Com_Frame()
  * Patch the function that loads gfx_d3d_mp_x86_s.dll
  * Is called only is dedicated = 0
  */
-int __cdecl hook_gfxDll() {
+int hook_gfxDll() {
     // Call the original function
-	int ret = ((int (__cdecl *)())0x00464e80)();
+	int ret = ((int ( *)())0x00464e80)();
 
     // Get address of gfx_d3d_mp_x86_s.dll module stored at 0x00d53e80
     gfx_module_addr = (unsigned int)(*(HMODULE*)0x00d53e80);
@@ -95,41 +98,86 @@ int __cdecl hook_gfxDll() {
 }
 
 
+
+/**
+ * CL_Init
+ *  - Is called in Com_Init after inicialization of:
+ *    - common cvars (dedicated, net, version, com_maxfps, developer, timescale, shortversion, ...)
+ *    - commands (exec, quit, wait, bind, ...)
+ *    - network system
+ *    - SV_Init
+ *    - NET_Init
+ *  - Is called only if dedicated = 0
+ *  - Original function:
+ *    - registers cvars like cl_*, cg_*, fx_*, sensitivity, name, ...
+ *    - registers commands like vid_restart, connect, record, ...
+ *    - calls auto-update server
+ *    - init renderer (loads gfx_d3d_mp_x86_s.dll)
+ */
+void hook_CL_Init() {
+    
+    #if DEBUG
+    hotreload_init();
+    #endif
+
+    // Client
+    hwid_init(); 
+    window_init();      // depends on being called before gfx dll is loaded
+    freeze_init();
+    rinput_init();
+    fps_init();
+    cgame_init();
+    master_server_init();
+    
+    if (!DLL_HOTRELOAD) {
+        ASM_CALL(RETURN_VOID, 0x00410a10);
+    }
+}
+
+
+/**
+ * SV_Init
+ *  - Is called in Com_Init after inicialization of:
+ *    - common cvars (dedicated, net, version, com_maxfps, developer, timescale, shortversion, net_*, ...)
+ *    - commands (exec, quit, wait, bind, ...)
+ *  - Original function registers cvars like sv_*
+ *  - Network is not initialized yet!
+ */
+void hook_SV_Init() {
+
+    // Shared & Server
+    common_init();
+    server_init();
+    updater_init();
+    game_init();
+    animation_init();
+
+    if (!DLL_HOTRELOAD) {
+        ASM_CALL(RETURN_VOID, 0x004596d0);
+    }
+}
+
+
 /**
  * Com_Init
  * Is called in main function when the game is started. Is called only once on game start.
  */
-void __cdecl hook_Com_Init(const char* cmdline) {
+void hook_Com_Init(const char* cmdline) {
 
     Com_Printf("Command line: '%s'\n", cmdline);
 
-    // Client side
-    #if DEBUG
-    hotreload_init();
-    #endif
-    exception_init();
-    window_init();
-    rinput_init();
-    fps_init();
-    cgame_init();
-    hwid_init();
-    master_server_init();
-
-    // Server side
-    server_init();
+    exception_init();   // sending thru NET will work after Com_Init is called and updater is initialized
 
     // Call the original function
-    if (!DLL_HOTRELOAD)
-	    ((void (__cdecl *)(const char*))0x00434460)(cmdline);
+    if (!DLL_HOTRELOAD) {
+        ASM_CALL(RETURN_VOID, 0x00434460, 1, PUSH(cmdline));
+    } else {
+        hook_SV_Init();
+        if (dedicated->value.boolean == 0)
+            hook_CL_Init();
+    }
 
-    // Client
-    freeze_init(); // depends on dedicated
-
-    // Server
-    common_init();
-    updater_init(); // depends on dedicated
-    game_init();
-    animation_init();
+    updater_checkForUpdate(); // depends on dedicated and network system
 }
 
 
@@ -147,13 +195,12 @@ bool hook_patch() {
     // Patch CoD2MP_s.exe
     ///////////////////////////////////////////////////////////////////
 
-    // Patch Com_Init
+    // Patch function calls
     patch_call(0x00434a66, (unsigned int)hook_Com_Init);
-    // Patch Com_Frame
+    patch_call(0x00434860, (unsigned int)hook_SV_Init);
+    patch_call(0x004348b4, (unsigned int)hook_CL_Init);
     patch_call(0x00435282, (unsigned int)hook_Com_Frame);
-    // Patch CL_Frame
     patch_call(0x0043506a, (unsigned int)hook_CL_Frame);
-    // Patch function that loads gfx_d3d_mp_x86_s.dll
     patch_call(0x004102b5, (unsigned int)hook_gfxDll);
 
     // Patch client side

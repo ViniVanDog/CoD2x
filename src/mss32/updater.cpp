@@ -15,7 +15,7 @@
 #define cl_updateOldVersion (*(dvar_t **)(0x0096b64c))
 #define cl_updateFiles (*(dvar_t **)(0x0096b5d4))
 
-struct netaddr_s updater_address;
+struct netaddr_s updater_address = { NA_INIT, {0}, 0, {0} };
 dvar_t* sv_update;
 
 extern dvar_t *cl_hwid;
@@ -172,9 +172,11 @@ bool updater_sendRequest() {
 
     Com_Printf("Checking for updates...\n");
 
+    int hwid = cl_hwid ? cl_hwid->value.integer : 0;
+
     // Send the request to the Auto-Update server
     char* udpPayload = (dedicated->value.boolean == 0) ? 
-        va("getUpdateInfo2 \"CoD2x MP\" \"" APP_VERSION "\" \"win-x86\" \"client\" \"%i\"\n", cl_hwid->value.integer): // Client
+        va("getUpdateInfo2 \"CoD2x MP\" \"" APP_VERSION "\" \"win-x86\" \"client\" \"%i\"\n", hwid): // Client
         va("getUpdateInfo2 \"CoD2x MP\" \"" APP_VERSION "\" \"win-x86\" \"server\"\n"); // Server
 
     bool status = NET_OutOfBandPrint(NS_CLIENT, updater_address, udpPayload);
@@ -264,19 +266,7 @@ void updater_dialogConfirmed() {
 
 
 
-
-/** Called only once on game start after common inicialization. Used to initialize variables, cvars, etc. */
-void updater_init() {
-
-    for (int i = 0; i <= 1; i++)
-    {
-        dvarFlags_e flags = i == 0 ? 
-            (dvarFlags_e)(DVAR_LATCH | DVAR_CHANGEABLE_RESET) : // allow the value to be changed via cmd when starting the game
-            (dvarFlags_e)(DVAR_ROM | DVAR_CHANGEABLE_RESET);    // then make it read-only to avoid changes
-
-        sv_update = Dvar_RegisterBool("sv_update", true, flags);
-    }
-
+void updater_checkForUpdate() {
     // Server
     if (dedicated->value.boolean > 0) {
         // Send the request to the Auto-Update server
@@ -286,6 +276,12 @@ void updater_init() {
     } else {
         updater_sendRequest();
     }
+}
+
+
+/** Called only once on game start after common inicialization. Used to initialize variables, cvars, etc. */
+void updater_init() {
+    sv_update = Dvar_RegisterBool("sv_update", true, (dvarFlags_e)(DVAR_CHANGEABLE_RESET));
 }
 
 /** Called before the entry point is called. Used to patch the memory. */

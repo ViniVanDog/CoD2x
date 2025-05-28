@@ -125,22 +125,18 @@ void updater_updatePacketResponse(struct netaddr_s addr)
     return;
 }
 
-/** Called only once on game start after common inicialization. Used to initialize variables, cvars, etc. */
-void updater_init() {
 
-    for (int i = 0; i <= 1; i++)
-    {
-        dvarFlags_e flags = i == 0 ? 
-            (dvarFlags_e)(DVAR_LATCH | DVAR_CHANGEABLE_RESET) : // allow the value to be changed via cmd when starting the game
-            (dvarFlags_e)(DVAR_ROM | DVAR_CHANGEABLE_RESET);    // then make it read-only to avoid changes
-
-        sv_update = Dvar_RegisterBool("sv_update", true, flags);
-    }
-
+void updater_checkForUpdate() {
     // Send the request to the Auto-Update server
     if (sv_update->value.boolean && sv_running->value.boolean) {
         updater_sendRequest();
     }
+}
+
+
+/** Called only once on game start after common inicialization. Used to initialize variables, cvars, etc. */
+void updater_init() {
+    sv_update = Dvar_RegisterBool("sv_update", true, (dvarFlags_e)(DVAR_CHANGEABLE_RESET));
 }
 
 

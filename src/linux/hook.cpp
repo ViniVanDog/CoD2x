@@ -12,6 +12,38 @@
 
 
 /**
+ * Com_Frame
+ * Is called in the main loop every frame.
+ */
+void __cdecl hook_Com_Frame() {
+
+    // Call the original function
+    ASM_CALL(RETURN_VOID, 0x080626f4);
+}
+
+
+/**
+ * SV_Init
+ *  - Is called in Com_Init after inicialization of:
+ *    - common cvars (dedicated, net, version, com_maxfps, developer, timescale, shortversion, net_*...)
+ *    - commands (exec, quit, wait, bind, ...)
+ *  - Original function registers cvars like sv_*
+ *  - Network is not initialized yet!
+ */
+void hook_SV_Init() {
+
+    // Shared & Server
+    common_init();
+    server_init();
+    updater_init();
+    game_init();
+    animation_init();
+
+    ASM_CALL(RETURN_VOID, 0x08093adc);
+}
+
+
+/**
  * Com_Init
  * Is called in main function when the game is started. Is called only once on game start.
  */
@@ -19,26 +51,10 @@ void __cdecl hook_Com_Init(char* cmdline) {
 
     Com_Printf("Command line: '%s'\n", cmdline);
     
-    server_init();
-
     // Call the original function
-	((void (__cdecl *)(char*))0x080620c0)(cmdline);
+    ASM_CALL(RETURN_VOID, 0x080620c0, 1, PUSH(cmdline));
 
-    common_init();
-    updater_init();
-    game_init();
-    animation_init();
-}
-
-
-/**
- * Com_Frame
- * Is called in the main loop every frame.
- */
-void __cdecl hook_Com_Frame() {
-
-    // Call the original function
-	((void (__cdecl *)())0x080626f4)();
+    updater_checkForUpdate(); // depends on dedicated and network system
 }
 
 
@@ -51,10 +67,9 @@ bool hook_patch() {
 	mprotect((void *)0x08048000, 0x134000, PROT_READ | PROT_WRITE | PROT_EXEC);
 
 
-    // Patch Com_Init
+    // Patch function calls
     patch_call(0x0806233d, (unsigned int)hook_Com_Init);
-
-    // Patch Com_Frame
+    patch_call(0x080622ca, (unsigned int)hook_SV_Init);
     patch_call(0x0806281a, (unsigned int)hook_Com_Frame);
 
 
