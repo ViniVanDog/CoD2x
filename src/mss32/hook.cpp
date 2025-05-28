@@ -224,6 +224,10 @@ bool hook_patch() {
     patch_byte(0x004b8dd0, 0xC3);
 
 
+    // Disable call to CL_VoicePacket, as voice chat is not working becaused the Windows Mixer fix above
+    patch_nop(0x0040e94e, 5);
+
+
     // Turn off "Run in safe mode?" dialog
     // Showed when game crashes (file __CoD2MP_s is found)
     patch_nop(0x004664cd, 2);           // 7506 (jne 0x4664d5)  ->  9090 (nop nop)
