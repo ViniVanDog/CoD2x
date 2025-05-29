@@ -226,7 +226,8 @@ void rinput_unregister() {
 
 
 void rinput_on_main_window_create() {
-
+    // Keep latched and change current to 0 to detect a change in frame loop
+    m_rinput->value.integer = 0;
 }
 
 void rinput_on_main_window_destory() {
