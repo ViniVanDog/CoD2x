@@ -125,12 +125,16 @@ LONG WINAPI exception_handler(EXCEPTION_POINTERS* pExceptionInfo) {
             espValue = pExceptionInfo->ContextRecord->Esp;
         }
 
+        size_t written = 0;
+        stackDump[0] = '\0'; // Initialize stackDump to an empty string
+
+        // First line will contain the exception details
+        written += snprintf(stackDump + written, sizeof(stackDump) - written, "0x%08X 0x%08X %s\n", moduleBase, fileOffset, moduleName);
+
         // Read a portion of the stack
         if (espValue) {
-            stackDump[0] = '\0'; // Initialize stackDump to an empty string
-
             DWORD* stack = (DWORD*)espValue;
-            size_t written = 0;
+
             for (size_t i = 0; i < stackDumpSize && written < sizeof(stackDump) - perLineSize; ++i) {
                 
                 // Check if the stack pointer is valid, filtering out invalid pointers
@@ -164,6 +168,13 @@ LONG WINAPI exception_handler(EXCEPTION_POINTERS* pExceptionInfo) {
                 }
                 if (moduleName2[0] == '\0')
                     continue;
+
+                // If the exception address is 0, use first valid address from the stack
+                // Exception address is 0 if there is a call to null pointer
+                if (exceptionAddress == 0 && strncmp(moduleName2, moduleName, MAX_PATH) == 0) {
+                    exceptionAddress = stackValue;
+                    fileOffset = stackValue - (unsigned int)mbi2.AllocationBase;
+                }
                 
                 written += snprintf(stackDump + written, sizeof(stackDump) - written, "0x%08X 0x%08X %s\n", stackValue, stackValue - (unsigned int)mbi2.AllocationBase, moduleName2);
             }
@@ -190,13 +201,17 @@ LONG WINAPI exception_handler(EXCEPTION_POINTERS* pExceptionInfo) {
         "Code:\t\t"   "0x%08x  (%s)\n"
         "Address:\t\t"  "0x%08x  (%s)\n"
         "File Address:\t"  "0x%08x\n"
+        "MSS32 version:\t"  "%s\n"
         "\n"
         "Stack:\n"  "%s\n"
         "\n"
-        "Would you like to create a diagnostic file before exiting?\n"
+        "Would you like to create a crash dump file before exiting?\n"
         "This file can help developers diagnose the problem.",
         exceptionCode, exception_getText(exceptionCode),
-        exceptionAddress, (moduleName[0] ? moduleName : "unknown module"), fileOffset, stackDump);
+        exceptionAddress, (moduleName[0] ? moduleName : "unknown module"),
+        fileOffset,
+        APP_VERSION,
+        stackDump);
 
     int result = MessageBox(NULL, tempBuffer, "Application crash", MB_YESNO | MB_ICONERROR | MB_TOPMOST);
 
