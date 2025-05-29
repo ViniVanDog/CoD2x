@@ -828,80 +828,15 @@ void BG_Player_DoControllers_Linux(void* obj, entityState_s* es, int* partBits, 
 
 
 
-
-
-
 /** Function responsible for swinging into desired angle smoothly */
-void BG_SwingAngles( float destination, float swingTolerance, float clampTolerance, float speed, float *angle, int *swinging )
-{
-	float	swing;
-	float	move;
-	float	scale;
-
-	if ( !*swinging )
-	{
-		// see if a swing should be started
-		swing = AngleSubtract( *angle, destination );
-		if ( swing > swingTolerance || swing < -swingTolerance )
-		{
-			*swinging = 1;
-		}
-	}
-
-	if ( !*swinging )
-	{
-		return;
-	}
-
-	// modify the speed depending on the delta
-	// so it doesn't seem so linear
-	swing = AngleSubtract( destination, *angle );
-	scale = fabs( swing );
-	if ( scale < swingTolerance * 0.5 )
-	{
-		scale = 0.5;
-	}
-	else if ( scale < swingTolerance )
-	{
-		scale = 1.0;
-	}
-	else
-	{
-		scale = 2.0;
-	}
-
-	// swing towards the destination angle
-	if ( swing >= 0 )
-	{
-		move = level_bgs->frametime * scale * speed;
-		if ( move >= swing )
-		{
-			move = swing;
-			*swinging = 0;
-		}
-		*angle = AngleNormalize360( *angle + move );
-	}
-	else if ( swing < 0 )
-	{
-		move = level_bgs->frametime * scale * -speed;
-		if ( move <= swing )
-		{
-			move = swing;
-			*swinging = 0;
-		}
-		*angle = AngleNormalize360( *angle + move );
-	}
-
-	// clamp to no more than tolerance
-	swing = AngleSubtract( destination, *angle );
-	if ( swing > clampTolerance )
-	{
-		*angle = AngleNormalize360( destination - (clampTolerance - 1) );
-	}
-	else if ( swing < -clampTolerance )
-	{
-		*angle = AngleNormalize360( destination + (clampTolerance - 1) );
-	}
+void BG_SwingAngles(float destination, float swingTolerance, float clampTolerance, float speed, float *angle, int *swinging) {
+	ASM_CALL(RETURN_VOID, ADDR(0x004fa000, 0x080da7dc), WL(4, 6), 
+		PUSH(destination), 
+		PUSH(swingTolerance), 
+		PUSH(clampTolerance), 
+		PUSH(speed), 
+		WL(ESI, PUSH)(angle), 
+		WL(ECX, PUSH)(swinging));
 }
 
 
