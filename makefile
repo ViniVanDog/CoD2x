@@ -33,7 +33,7 @@ VERSION_PATCH = 2
 
 # CoD2x test version
 # Should be increased when new version is released and the changes are backward compatible
-VERSION_TEST = -test.1
+VERSION_TEST = -test.2
 VERSION_IS_TEST = 1
 
 # Full version string
