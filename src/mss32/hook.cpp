@@ -67,6 +67,7 @@ void hook_Com_Frame()
     freeze_frame();
     fps_frame();
     cgame_frame();
+    updater_frame();
 
     // Call the original function
     ASM_CALL(RETURN_VOID, 0x00434f70);

@@ -5,6 +5,7 @@
 
 #include "shared.h"
 #include "../shared/cod2_dvars.h"
+#include "../shared/cod2_client.h"
 #include "../shared/cod2_net.h"
 #include "../shared/cod2_cmd.h"
 #include "../shared/cod2_shared.h"
@@ -15,11 +16,19 @@
 #define cl_updateOldVersion (*(dvar_t **)(0x0096b64c))
 #define cl_updateFiles (*(dvar_t **)(0x0096b5d4))
 
+#define clientState                   (*((clientState_e*)0x00609fe0))
+#define demo_isPlaying                (*((int*)0x0064a170))
+
+bool updater_forcedUpdate = false;
 struct netaddr_s updater_address = { NA_INIT, {0}, 0, {0} };
 dvar_t* sv_update;
 
 extern dvar_t *cl_hwid;
 
+
+void updater_showForceUpdateDialog() {
+    Com_Error(ERR_DROP, "Update required\n\nA new version of CoD2x must be installed.\nPlease update to version %s.\n", cl_updateVersion->value.string);
+}
 
 bool updater_downloadDLL(const char *url, const char *downloadPath, char *errorBuffer, size_t errorBufferSize) {
     // Initialize WinINet
@@ -154,6 +163,10 @@ bool updater_downloadAndReplaceDllFile(const char *url, char *errorBuffer, size_
 }
 
 
+void CL_BuildMd5StrFromCDKey(char* out) {
+    ASM_CALL(RETURN_VOID, 0x0040cfc0, 1, PUSH(out));
+}
+
 
 // This function is called on startup to check for updates
 // Original func: 0x0041162f 
@@ -174,9 +187,12 @@ bool updater_sendRequest() {
 
     int hwid = cl_hwid ? cl_hwid->value.integer : 0;
 
+    char CDKeyHash[34];
+    CL_BuildMd5StrFromCDKey(CDKeyHash);
+
     // Send the request to the Auto-Update server
     char* udpPayload = (dedicated->value.boolean == 0) ? 
-        va("getUpdateInfo2 \"CoD2x MP\" \"" APP_VERSION "\" \"win-x86\" \"client\" \"%i\"\n", hwid): // Client
+        va("getUpdateInfo2 \"CoD2x MP\" \"" APP_VERSION "\" \"win-x86\" \"client\" \"%i\" \"%s\"\n", hwid, CDKeyHash): // Client
         va("getUpdateInfo2 \"CoD2x MP\" \"" APP_VERSION "\" \"win-x86\" \"server\"\n"); // Server
 
     bool status = NET_OutOfBandPrint(NS_CLIENT, updater_address, udpPayload);
@@ -234,6 +250,12 @@ void updater_updatePacketResponse(struct netaddr_s addr)
             Dvar_SetString(cl_updateFiles, updateFile);
             Dvar_SetString(cl_updateVersion, newVersionString);
             Dvar_SetString(cl_updateOldVersion, APP_VERSION);
+
+            // Forced update
+            if (updateAvailable == 2) {
+                updater_forcedUpdate = true;
+                updater_showForceUpdateDialog();
+            }
         }
 
     } else {
@@ -276,6 +298,14 @@ void updater_checkForUpdate() {
     } else {
         updater_sendRequest();
     }
+}
+
+/** Called every frame on frame start. */
+void updater_frame() {
+    // If the forced update is available and player leaves main menu, show error
+    if (updater_forcedUpdate && clientState > CLIENT_STATE_DISCONNECTED && demo_isPlaying == 0) {
+        updater_showForceUpdateDialog();
+    }   
 }
 
 
