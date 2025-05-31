@@ -64,9 +64,14 @@ void hook_Com_Frame()
         }
     #endif
 
+    // Only for client
+    if (dedicated->value.integer == 0) {
+        fps_frame();
+        cgame_frame();
+    }
+
+    // Shared & Server
     freeze_frame();
-    fps_frame();
-    cgame_frame();
     updater_frame();
 
     // Call the original function

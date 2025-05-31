@@ -303,7 +303,7 @@ void updater_checkForUpdate() {
 /** Called every frame on frame start. */
 void updater_frame() {
     // If the forced update is available and player leaves main menu, show error
-    if (updater_forcedUpdate && clientState > CLIENT_STATE_DISCONNECTED && demo_isPlaying == 0) {
+    if (updater_forcedUpdate && dedicated->value.integer == 0 && clientState > CLIENT_STATE_DISCONNECTED && demo_isPlaying == 0) {
         updater_showForceUpdateDialog();
     }   
 }
