@@ -124,7 +124,6 @@ void hook_CL_Init() {
     // Client
     hwid_init(); 
     window_init();      // depends on being called before gfx dll is loaded
-    freeze_init();
     rinput_init();
     fps_init();
     cgame_init();
@@ -147,6 +146,7 @@ void hook_CL_Init() {
 void hook_SV_Init() {
 
     // Shared & Server
+    freeze_init();
     common_init();
     server_init();
     updater_init();

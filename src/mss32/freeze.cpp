@@ -9,7 +9,7 @@
 #include "../shared/cod2_dvars.h"
 #include "../shared/cod2_cmd.h"
 
-dvar_t* cl_freezeWatch = NULL;
+dvar_t* com_freezeWatch = NULL;
 HANDLE crash_watchdogThreadHandle = NULL;
 volatile DWORD freeze_lastHeartbeat = 0;   // Updated by the main thread
 volatile bool freeze_exitThread = false;
@@ -25,7 +25,7 @@ DWORD WINAPI freeze_watchdogThreadProc(LPVOID lpParameter) {
         Sleep(1000);
 
         DWORD currentTime = GetTickCount();
-        if (currentTime - freeze_lastHeartbeat > 12000) {
+        if (currentTime - freeze_lastHeartbeat > DEBUG_RELEASE(20000, 12000)) {
 
             // Dont show messagebox for servers
             if (dedicated->value.boolean > 0) {
@@ -73,10 +73,10 @@ void freeze_frame() {
     freeze_lastHeartbeat = GetTickCount();
 
     // Check if the cvar was modified
-    if (cl_freezeWatch->modified) {
-        cl_freezeWatch->modified = false;
+    if (com_freezeWatch->modified) {
+        com_freezeWatch->modified = false;
         
-        if (cl_freezeWatch->value.boolean) {
+        if (com_freezeWatch->value.boolean) {
             // Create the watchdog thread.
             freeze_exitThread = false;
             crash_watchdogThreadHandle = CreateThread(NULL, 0, freeze_watchdogThreadProc, NULL, 0, NULL);
@@ -98,10 +98,10 @@ void freeze_frame() {
 
 /** Called only once on game start after common inicialization. Used to initialize variables, cvars, etc. */
 void freeze_init() {
-    cl_freezeWatch = Dvar_RegisterBool("cl_freezeWatch", true, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
+    com_freezeWatch = Dvar_RegisterBool("com_freezeWatch", true, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
 
-    if (cl_freezeWatch->value.boolean)
-        cl_freezeWatch->modified = true;
+    if (com_freezeWatch->value.boolean)
+        com_freezeWatch->modified = true;
 }
 
 
