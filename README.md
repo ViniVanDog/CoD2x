@@ -6,7 +6,8 @@ CoD2x is a modification of Call of Duty 2. It is build on top of 1.3 version.
 It focuses on fixing bugs and adding new features to the game.
 
 # Version history
-- 2025-05-25 - 1.4.3.1 - current
+- 2025-06-02 - 1.4.3.2 - current
+- 2025-05-25 - 1.4.3.1
 - 2025-03-06 - 1.4.2.3
 - 2025-03-02 - 1.4.2.2
 - 2025-01-23 - 1.4.2.1
@@ -81,6 +82,7 @@ It focuses on fixing bugs and adding new features to the game.
   - ![alt text](images/cod2-crash-error.png)
 - Added process freeze detection
   - ![alt text](images/cod2-freeze-error.png)
+  - It can be disabled by setting `/com_freezeWatch 0`
 - Tickrate
   - ![alt text](images/cod2-tick-wireshark.png)
   - Server FPS maximum increased from 30 to 40 (`sv_fps 40`)
@@ -108,7 +110,7 @@ It focuses on fixing bugs and adding new features to the game.
 
 # How to install (client on Windows)
 1. You need original Call of Duty 2 with version [1.3](https://www.moddb.com/games/call-of-duty-2/downloads/call-of-duty-2-pc-patch-v-13) installed.
-2. Download latest version of CoD2x - [CoD2x_1.4.3.1_windows.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.3.1/CoD2x_1.4.3.1_windows.zip)
+2. Download latest version of CoD2x - [CoD2x_1.4.3.2_windows.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.3.2/CoD2x_1.4.3.2_windows.zip)
 3. Extract these files from the archive to the Call of Duty 2 folder, replacing any existing file:
     - 📄 mss32.dll
     - 📄 mss32_original.dll
@@ -137,7 +139,7 @@ It focuses on fixing bugs and adding new features to the game.
 
 
 # How to install (server on Linux)
-1. Download latest version of CoD2x - [CoD2x_1.4.3.1_linux.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.3.1/CoD2x_1.4.3.1_linux.zip)
+1. Download latest version of CoD2x - [CoD2x_1.4.3.2_linux.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.3.2/CoD2x_1.4.3.2_linux.zip)
 2. Extract this file from the archive to the Call of Duty 2 folder:
     - 📄 libCoD2x.so
 3. Final structure should look like this:
