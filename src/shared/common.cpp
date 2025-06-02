@@ -89,7 +89,7 @@ void Com_ParseCommandLine_Win32() {
 
 
 
-void common_init() {
+void common_printInfo() {
     Com_Printf("-----------------------------------\n");
     Com_Printf("Command line: ");
     for (int i = 0; i < com_numConsoleLines; i++) {
@@ -106,6 +106,11 @@ void common_init() {
     Com_Printf("-----------------------------------\n");
     Com_Printf("CoD2x " APP_VERSION " loaded\n");
     Com_Printf("-----------------------------------\n");
+}
+
+
+void common_init() {
+
 }
 
 

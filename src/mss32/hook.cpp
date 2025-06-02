@@ -184,6 +184,7 @@ void hook_Com_Init(const char* cmdline) {
     }
 
     updater_checkForUpdate(); // depends on dedicated and network system
+    common_printInfo();
 }
 
 

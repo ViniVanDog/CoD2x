@@ -55,6 +55,7 @@ void __cdecl hook_Com_Init(char* cmdline) {
     ASM_CALL(RETURN_VOID, 0x080620c0, 1, PUSH(cmdline));
 
     updater_checkForUpdate(); // depends on dedicated and network system
+    common_printInfo();
 }
 
 
