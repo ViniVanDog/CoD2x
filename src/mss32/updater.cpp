@@ -30,12 +30,12 @@ void updater_showForceUpdateDialog() {
     Com_Error(ERR_DROP, "Update required\n\nA new version of CoD2x must be installed.\nPlease update to version %s.\n", cl_updateVersion->value.string);
 }
 
-bool updater_downloadDLL(const char *url, const char *downloadPath, char *errorBuffer, size_t errorBufferSize) {
+bool updater_downloadDLL(const char *url, const char *downloadPath, char *errorBuffer, size_t errorBufferSize, int retryCount = 0) {
     // Initialize WinINet
     HINTERNET hInternet = InternetOpenA("CoD2x " APP_VERSION " Update Downloader", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
     if (!hInternet) {
         snprintf(errorBuffer, errorBufferSize, "Failed to initialize WinINet.");
-        return 0;
+        return false;
     }
 
     // Open URL
@@ -43,18 +43,17 @@ bool updater_downloadDLL(const char *url, const char *downloadPath, char *errorB
     if (!hFile) {
         snprintf(errorBuffer, errorBufferSize, "Failed to open URL '%s'.", url);
         InternetCloseHandle(hInternet);
-        return 0;
+        return false;
     }
 
     // Check HTTP status code
     DWORD statusCode = 0;
     DWORD statusCodeSize = sizeof(statusCode);
-
     if (!HttpQueryInfoA(hFile, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER, &statusCode, &statusCodeSize, NULL)) {
         snprintf(errorBuffer, errorBufferSize, "Failed to query HTTP status code for URL '%s'.", url);
         InternetCloseHandle(hFile);
         InternetCloseHandle(hInternet);
-        return 0;
+        return false;
     }
 
     // Handle HTTP errors (e.g., 404 Not Found)
@@ -62,7 +61,17 @@ bool updater_downloadDLL(const char *url, const char *downloadPath, char *errorB
         snprintf(errorBuffer, errorBufferSize, "HTTP error %lu encountered for URL '%s'.", statusCode, url);
         InternetCloseHandle(hFile);
         InternetCloseHandle(hInternet);
-        return 0;
+        return false;
+    }
+
+    // Retrieve expected file size from the Content-Length header.
+    DWORD contentLength = 0;
+    DWORD contentLengthSize = sizeof(contentLength);
+    if (!HttpQueryInfoA(hFile, HTTP_QUERY_CONTENT_LENGTH | HTTP_QUERY_FLAG_NUMBER, &contentLength, &contentLengthSize, NULL)) {
+        snprintf(errorBuffer, errorBufferSize, "Failed to retrieve content length for URL '%s'.", url);
+        InternetCloseHandle(hFile);
+        InternetCloseHandle(hInternet);
+        return false;
     }
 
     // Create file using CreateFile
@@ -80,21 +89,23 @@ bool updater_downloadDLL(const char *url, const char *downloadPath, char *errorB
         snprintf(errorBuffer, errorBufferSize, "Failed to create file at '%s'.", downloadPath);
         InternetCloseHandle(hFile);
         InternetCloseHandle(hInternet);
-        return 0;
+        return false;
     }
 
     // Download and write data
     char buffer[4096];
     DWORD bytesRead;
     DWORD bytesWritten;
+    DWORD totalBytesDownloaded = 0;
 
     while (InternetReadFile(hFile, buffer, sizeof(buffer), &bytesRead) && bytesRead > 0) {
+        totalBytesDownloaded += bytesRead;
         if (!WriteFile(hLocalFile, buffer, bytesRead, &bytesWritten, NULL)) {
             snprintf(errorBuffer, errorBufferSize, "Failed to write to file '%s'.", downloadPath);
             CloseHandle(hLocalFile);
             InternetCloseHandle(hFile);
             InternetCloseHandle(hInternet);
-            return 0;
+            return false;
         }
 
         if (bytesWritten != bytesRead) {
@@ -102,8 +113,25 @@ bool updater_downloadDLL(const char *url, const char *downloadPath, char *errorB
             CloseHandle(hLocalFile);
             InternetCloseHandle(hFile);
             InternetCloseHandle(hInternet);
-            return 0;
+            return false;
         }
+    }
+
+    // Validate the download integrity
+    if (totalBytesDownloaded != contentLength) {
+        CloseHandle(hLocalFile);
+        InternetCloseHandle(hFile);
+        InternetCloseHandle(hInternet);
+
+        // Try again
+        retryCount++;
+
+        if (retryCount > 3) {
+            snprintf(errorBuffer, errorBufferSize, "File download incomplete: expected %lu bytes, got %lu bytes.", contentLength, totalBytesDownloaded);
+            return false; // Too many retries
+        }
+
+        return updater_downloadDLL(url, downloadPath, errorBuffer, errorBufferSize, retryCount);
     }
 
     // Clean up
@@ -111,7 +139,7 @@ bool updater_downloadDLL(const char *url, const char *downloadPath, char *errorB
     InternetCloseHandle(hFile);
     InternetCloseHandle(hInternet);
 
-    return 1; // Success
+    return true; // Success
 }
 
 
