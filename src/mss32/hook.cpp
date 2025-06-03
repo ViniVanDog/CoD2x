@@ -211,6 +211,7 @@ bool hook_patch() {
     patch_call(0x004102b5, (unsigned int)hook_gfxDll);
 
     // Patch client side
+    freeze_patch();
     window_patch();
     rinput_patch();
     fps_patch();

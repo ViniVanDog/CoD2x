@@ -3,5 +3,6 @@
 
 void freeze_frame();
 void freeze_init();
+void freeze_patch();
 
 #endif

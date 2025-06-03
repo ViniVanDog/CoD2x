@@ -58,6 +58,17 @@ DWORD WINAPI freeze_watchdogThreadProc(LPVOID lpParameter) {
 }
 
 
+// Called when map is being loaded. In that time, COM_Frame is not called, so freeze heartbet is not being updated.
+// Heartbeat is updated here to prevent the watchdog thread from thinking the game is frozen.
+void Sys_LoadingKeepAlive() {
+
+    // Update the last heartbeat
+    freeze_lastHeartbeat = GetTickCount();
+
+    ASM_CALL(RETURN_VOID, 0x00465c80);
+}
+
+
 /** Called every frame on frame start. */
 void freeze_frame() {
 
@@ -104,4 +115,12 @@ void freeze_init() {
         com_freezeWatch->modified = true;
 }
 
+
+/** Called before the entry point is called. Used to patch the memory. */
+void freeze_patch() {
+    patch_call(0x004c0edd, (unsigned int)Sys_LoadingKeepAlive); // in CG_Init
+    patch_call(0x004c107a, (unsigned int)Sys_LoadingKeepAlive); // in CG_Init
+    patch_call(0x004bfbac, (unsigned int)Sys_LoadingKeepAlive); // in CG_RegisterGraphics
+    patch_call(0x004c0032, (unsigned int)Sys_LoadingKeepAlive); // in CG_RegisterGraphics
+}
 
