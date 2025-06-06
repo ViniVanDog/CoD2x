@@ -234,4 +234,12 @@ inline char* MSG_ReadStringLine(msg_t* msg) {
     #endif
 }
 
+#if COD2X_WIN32
+inline char* MSG_ReadString(msg_t* msg) {
+    char* ret;
+    ASM_CALL(RETURN(ret), 0x00444480, 0, EDX(msg));
+    return ret;
+}
+#endif
+
 #endif

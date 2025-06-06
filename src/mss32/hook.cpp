@@ -217,6 +217,7 @@ bool hook_patch() {
     fps_patch();
     cgame_patch();
     updater_patch();
+    master_server_patch();
 
     // Patch server side
     common_patch();
