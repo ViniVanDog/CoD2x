@@ -167,4 +167,10 @@ void common_patch()
     // Fix "iwd/sum name mismatch" error (especially for Windows when doing devmap) caused by too many IWD files
     // The problem is in function Info_SetValueForKey_Big, which uses 0x2000 for buffer size, but there is a check for 0x400
     patch_int32(ADDR(0x0044b14b + 1, 0x080b89ed + 1), 0x2000); // original: cmp eax, 0x400
+
+
+
+    // Set min and def value of cvar /com_hunkMegs to 512
+    patch_int32(ADDR(0x0042c6d6 + 1, 0x080ab9b3 + 4), 512); // minimim value, originally is 1
+    patch_int32(ADDR(0x0042c6d1 + 1, 0x080ab9bb + 4), 512); // default value, originally is 160
 }
