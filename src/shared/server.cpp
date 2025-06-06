@@ -295,6 +295,24 @@ netaddr_s * SV_MasterAddress(int i)
 	return &masterServerAddr[i];
 }
 
+
+void server_cmd_getIp()
+{
+	for (int i = 0 ; i < MAX_MASTER_SERVERS; i++)
+	{
+		if (strcmp(sv_master[i]->value.string, SERVER_MASTER_URI) != 0) // find CoD2x master server
+			continue;
+
+		SV_MasterAddress(i); // Resolve the master server address in cause its not resolved yet or sv_master was modified
+
+		if (masterServerAddr[i].type != NA_BAD)
+		{
+			NET_OutOfBandPrint(NS_SERVER, masterServerAddr[i], "getIp");
+		}
+	}
+}
+
+
 /**
  * Check if the address belongs to a master server.
  * If masterServerUri is NULL, it will check all master servers.
@@ -385,18 +403,7 @@ void SV_MasterHeartbeat( const char *hbname )
 		//nextIPTime = svs_time + 2000; // Try again after 2 seconds, unless response is received
 		nextIPTime = 0;
 
-		for (i = 0 ; i < MAX_MASTER_SERVERS; i++)
-		{
-			if (strcmp(sv_master[i]->value.string, SERVER_MASTER_URI) != 0) // find CoD2x master server
-				continue;
-
-			SV_MasterAddress(i); // Resolve the master server address in cause its not resolved yet or sv_master was modified
-
-			if (masterServerAddr[i].type != NA_BAD)
-			{
-				NET_OutOfBandPrint(NS_SERVER, masterServerAddr[i], "getIp");
-			}
-		}
+		server_cmd_getIp();
 	}
 	// CoD2x: End
 }
@@ -886,6 +893,9 @@ void server_init()
 
 	
     Cmd_AddCommand("unbanAll", server_unbanAll_command);
+
+	// CoD2x: Command to get IP and port of this server
+	Cmd_AddCommand("getIp", server_cmd_getIp); 
 }
 
 
