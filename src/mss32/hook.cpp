@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "shared.h"
+#include "affinity.h"
 #include "hotreload.h"
 #include "exception.h"
 #include "freeze.h"
@@ -66,6 +67,7 @@ void hook_Com_Frame()
 
     // Only for client
     if (dedicated->value.integer == 0) {
+        affinity_frame();
         fps_frame();
         cgame_frame();
     }
@@ -183,6 +185,7 @@ void hook_Com_Init(const char* cmdline) {
             hook_CL_Init();
     }
 
+    affinity_init();
     updater_checkForUpdate(); // depends on dedicated and network system
     common_printInfo();
 }
