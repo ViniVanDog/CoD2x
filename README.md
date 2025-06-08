@@ -6,7 +6,8 @@ CoD2x is a modification of Call of Duty 2. It is build on top of 1.3 version.
 It focuses on fixing bugs and adding new features to the game.
 
 # Version history
-- 2025-06-06 - 1.4.3.4 - current
+- 2025-06-08 - 1.4.3.5 - current
+- 2025-06-06 - 1.4.3.4
 - 2025-06-06 - 1.4.3.3
 - 2025-06-02 - 1.4.3.2
 - 2025-05-25 - 1.4.3.1
@@ -108,11 +109,15 @@ It focuses on fixing bugs and adding new features to the game.
 - New cvar `showPacketStrings` to show network communication data
 - New commands `/increase` and `/decrease` to increase or decrease the value of a cvar
 - Reversed function for third person, added new cvar `cg_thirdPersonMode 1` that rotates directly around player without collision with the world
+- Added possibility to set CPU affinity
+  - `com_affinity -1` (defailt) - use maximum available CPU cores
+  - `com_affinity 0` - disable automatically setting CPU affinity
+  - `com_affinity <number>` - set specified number of cores (e.g. `com_affinity 3` will use first 3 cores)
 
 
 # How to install (client on Windows)
 1. You need original Call of Duty 2 with version [1.3](https://www.moddb.com/games/call-of-duty-2/downloads/call-of-duty-2-pc-patch-v-13) installed.
-2. Download latest version of CoD2x - [CoD2x_1.4.3.4_windows.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.3.4/CoD2x_1.4.3.4_windows.zip)
+2. Download latest version of CoD2x - [CoD2x_1.4.3.5_windows.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.3.5/CoD2x_1.4.3.5_windows.zip)
 3. Extract these files from the archive to the Call of Duty 2 folder, replacing any existing file:
     - 📄 mss32.dll
     - 📄 mss32_original.dll
@@ -141,7 +146,7 @@ It focuses on fixing bugs and adding new features to the game.
 
 
 # How to install (server on Linux)
-1. Download latest version of CoD2x - [CoD2x_1.4.3.4_linux.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.3.4/CoD2x_1.4.3.4_linux.zip)
+1. Download latest version of CoD2x - [CoD2x_1.4.3.5_linux.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.3.5/CoD2x_1.4.3.5_linux.zip)
 2. Extract this file from the archive to the Call of Duty 2 folder:
     - 📄 libCoD2x.so
 3. Final structure should look like this:
