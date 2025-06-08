@@ -23,7 +23,7 @@ dvar_t* sv_update;
 
 void download_and_swap_async(const char *current_version, const char *new_version, const char *url) {
     
-    char libCoD2x_new[512], libCoD2x_old[512], libCoD2x_log[512], cmd[1024];
+    char libCoD2x_new[512], libCoD2x_old[512], libCoD2x_log[512], cmd[2048];
 
     snprintf(libCoD2x_new, sizeof(libCoD2x_new), "%s.new", LIB_PATH);
     snprintf(libCoD2x_old, sizeof(libCoD2x_old), "%s.%s.old", LIB_PATH, current_version);
@@ -47,6 +47,10 @@ void download_and_swap_async(const char *current_version, const char *new_versio
     off += snprintf(cmd + off, sizeof(cmd) - off, "mv -f \"%s\" \"%s\"; ", libCoD2x_new, LIB_PATH); // Replace with new lib
     off += snprintf(cmd + off, sizeof(cmd) - off, "echo \"==========================================================================================\"; ");
     off += snprintf(cmd + off, sizeof(cmd) - off, "} >> \"%s\" 2>&1' </dev/null >/dev/null 2>&1 &", libCoD2x_log); // Redirect all output to log and run in background
+
+    Com_DPrintf("\nShell:\n");
+    Com_DPrintf("%s", cmd);
+    Com_DPrintf("\n\n");
 
     // Execute the constructed command asynchronously
     system(cmd);
