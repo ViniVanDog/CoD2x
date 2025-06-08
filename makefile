@@ -137,6 +137,16 @@ LINUX_LIBS = -ldl -pthread
 # -fPIC: Generate position-independent code
 # -shared: Create a shared library (SO)
 
+
+ifeq ($(OS),Windows_NT)
+    ECHO_QUOTE =
+    ECHO_QUOTE_ESCAPED = "
+else
+    ECHO_QUOTE = "
+	ECHO_QUOTE_ESCAPED = \"
+endif
+
+
 # ========================================================================================================
 # Build Targets and Rules
 # ========================================================================================================
@@ -154,13 +164,14 @@ prebuild: $(SHARED_SRC_DIR)/version.h
 $(SHARED_SRC_DIR)/version.h: makefile
 	@echo Generating version.h...
 
-	@echo #define APP_VERSION_MAJOR $(VERSION_MAJOR) 			>  $(SHARED_SRC_DIR)\version.h
-	@echo #define APP_VERSION_MINOR $(VERSION_MINOR) 			>> $(SHARED_SRC_DIR)\version.h
-	@echo #define APP_VERSION_PROTOCOL $(VERSION_PROTOCOL) 	>> $(SHARED_SRC_DIR)\version.h
-	@echo #define APP_VERSION_PATCH $(VERSION_PATCH) 			>> $(SHARED_SRC_DIR)\version.h
-	@echo #define APP_VERSION_IS_TEST $(VERSION_IS_TEST) 		>> $(SHARED_SRC_DIR)\version.h
-	@echo #define APP_VERSION "$(VERSION)" 					>> $(SHARED_SRC_DIR)\version.h
+	@echo $(ECHO_QUOTE)#define APP_VERSION_MAJOR $(VERSION_MAJOR)$(ECHO_QUOTE) 			>  $(SHARED_SRC_DIR)/version.h
+	@echo $(ECHO_QUOTE)#define APP_VERSION_MINOR $(VERSION_MINOR)$(ECHO_QUOTE) 			>> $(SHARED_SRC_DIR)/version.h
+	@echo $(ECHO_QUOTE)#define APP_VERSION_PROTOCOL $(VERSION_PROTOCOL)$(ECHO_QUOTE) 	>> $(SHARED_SRC_DIR)/version.h
+	@echo $(ECHO_QUOTE)#define APP_VERSION_PATCH $(VERSION_PATCH)$(ECHO_QUOTE) 			>> $(SHARED_SRC_DIR)/version.h
+	@echo $(ECHO_QUOTE)#define APP_VERSION_IS_TEST $(VERSION_IS_TEST)$(ECHO_QUOTE) 		>> $(SHARED_SRC_DIR)/version.h
+	@echo $(ECHO_QUOTE)#define APP_VERSION $(ECHO_QUOTE_ESCAPED)$(VERSION)$(ECHO_QUOTE_ESCAPED)$(ECHO_QUOTE) 					>> $(SHARED_SRC_DIR)/version.h
 	
+	@echo $(VERSION) writed to $(SHARED_SRC_DIR)/version.h
 	@echo   Done.
 
 
@@ -199,14 +210,14 @@ $(WIN_MSS32_TARGET): $(WIN_MSS32_OBJECTS) $(WIN_MSS32_OBJ_DIR)/version.res
 	@echo.
 
 # Compile C++ files
-$(WIN_MSS32_OBJ_DIR)/%.o: $(WIN_MSS32_SRC_DIR)/%.cpp | $(WIN_MSS32_OBJ_DIR)
+$(WIN_MSS32_OBJ_DIR)/%.o: $(WIN_MSS32_SRC_DIR)/%.cpp | $(WIN_MSS32_OBJ_DIR) $(SHARED_SRC_DIR)/version.h
 	@echo "Compiling $< for MSS32 (Windows)..."
 	$(WIN_CC) $(WIN_CFLAGS) -MMD -MP -c -o $@ $<
 	@echo   Done.  "$<"
 	@echo.
 
 # Assemble ASM files
-$(WIN_MSS32_OBJ_DIR)/%.o: $(WIN_MSS32_SRC_DIR)/%.asm | $(WIN_MSS32_OBJ_DIR)
+$(WIN_MSS32_OBJ_DIR)/%.o: $(WIN_MSS32_SRC_DIR)/%.asm | $(WIN_MSS32_OBJ_DIR) $(SHARED_SRC_DIR)/version.h
 	@echo "Assembling $< for MSS32 (Windows)..."
 	$(WIN_AS) $(WIN_ASFLAGS) $< -o $@
 	@echo   Done.  "$<"
@@ -272,7 +283,7 @@ $(LINUX_TARGET): $(LINUX_OBJECTS)
 	@echo   Done.  "$<"
 	@echo ""
 
-$(LINUX_OBJ_DIR)/%.o: $(LINUX_SRC_DIR)/%.cpp | $(LINUX_OBJ_DIR)
+$(LINUX_OBJ_DIR)/%.o: $(LINUX_SRC_DIR)/%.cpp | $(LINUX_OBJ_DIR) $(SHARED_SRC_DIR)/version.h
 	@echo "Compiling $< for CoD2x (Linux)..."
 	$(LINUX_CC) $(LINUX_CFLAGS) -MMD -MP -c -o $@ $<
 	@echo   Done.  "$<"
@@ -293,7 +304,7 @@ $(LINUX_OBJ_DIR) $(LINUX_BIN_DIR):
 # ========================================================================================================
 
 # Compile shared functionality objects for Windows
-$(WIN_MSS32_OBJ_DIR)/shared_%.o: $(SHARED_SRC_DIR)/%.cpp | $(WIN_MSS32_OBJ_DIR)
+$(WIN_MSS32_OBJ_DIR)/shared_%.o: $(SHARED_SRC_DIR)/%.cpp | $(WIN_MSS32_OBJ_DIR) $(SHARED_SRC_DIR)/version.h
 	@echo "Compiling $< for shared functionality (Windows)..."
 	$(WIN_CC) $(WIN_CFLAGS) -MMD -MP -c -o $@ $<
 	@echo   Done.  "$<"
