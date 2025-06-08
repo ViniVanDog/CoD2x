@@ -29,7 +29,7 @@ inline void Com_Error(enum errorParm_e type, const char* format, ...) {
     char buffer[4096];
     vsnprintf(buffer, sizeof(buffer), format, val);
     va_end(val);
-    ((void(__cdecl*)(int, const char*))(ADDR(0x004324c0, 0x08061124)))(type, buffer);
+    ((void(__cdecl*)(int, const char*, const char*))(ADDR(0x004324c0, 0x08061124)))(type, "%s", buffer);
 }
 
 /**
@@ -43,7 +43,7 @@ inline int Com_Printf(const char* format, ...) {
     char buffer[4096];
     vsnprintf(buffer, sizeof(buffer), format, val);
     va_end(val);
-    return ((int(__cdecl*)(const char*))(ADDR(0x00431ee0, 0x08060dea)))(buffer);
+    return ((int(__cdecl*)(const char*, const char*))(ADDR(0x00431ee0, 0x08060dea)))("%s", buffer);
 }
 
 /**
@@ -57,7 +57,7 @@ inline int Com_DPrintf(const char* format, ...) {
     char buffer[4096];
     vsnprintf(buffer, sizeof(buffer), format, val);
     va_end(val);
-    return ((int(__cdecl*)(const char*))(ADDR(0x00431f30, 0x08060e3a)))(buffer);
+    return ((int(__cdecl*)(const char*, const char*))(ADDR(0x00431f30, 0x08060e3a)))("%s", buffer);
 }
 
 
