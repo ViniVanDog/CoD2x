@@ -976,9 +976,10 @@ void BG_PlayerAngles(const entityState_s *es, clientInfo_t *ci)
 		ci->legs.yawing = 0;
 		ci->legs.yawAngle = playerAngles[1] + legsYawDirection; // set to disable swing
 		
+		// Disabled since 1.4.4.1
 		// CoD2x: Ignore legs yaw direction to make legs aligned exacly according to player angles.
 		// Previously, the legs were "sticked" to the ground to max 90 degrees
-		if (g_cod2x->value.integer >= 3) {
+		if (g_cod2x->value.integer >= 3 && g_cod2x->value.integer < 4) {
 			ci->legs.yawAngle = playerAngles[1];
 		}
 		// CoD2x: end
