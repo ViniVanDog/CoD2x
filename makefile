@@ -100,7 +100,7 @@ LINUX_OBJECTS = $(patsubst $(LINUX_SRC_DIR)/%.cpp, $(LINUX_OBJ_DIR)/%.o, $(LINUX
 # ========================================================================================================
 
 # Compilation flags
-CFLAGS = -Wall -Wextra -Wno-unused-parameter -Wno-address-of-packed-member -g -m32 -lstdc++ -O0
+CFLAGS = -Wall -Wextra -Wno-unused-parameter -Wno-address-of-packed-member -g -m32 -lstdc++ -msse -O0
 # Flag explanations:
 # -Wall: Enable all compiler warnings
 # -Wextra: Enable extra compiler warnings
@@ -108,8 +108,9 @@ CFLAGS = -Wall -Wextra -Wno-unused-parameter -Wno-address-of-packed-member -g -m
 # -Wno-address-of-packed-member: Disable warnings for address of packed structures
 # -g: Include debugging information
 # -m32: Generate 32-bit code
-# -shared: Create a shared library (windows: DLL, linux: SO)
 # -lstdc++: Link with the C++ standard library
+# -msse: Enable SSE instructions (only to be able to add registers xmm0-xmm7 to clobber list for inline assembly)
+# -O0: Disable optimizations
 
 # Add macro definition for debug mode
 ifeq ($(DEBUG),1)

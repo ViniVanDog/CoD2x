@@ -37,7 +37,7 @@ void hook_CL_Frame()
     ASM( movr, time, "esi" );
 
     // Call the original function
-    ASM_CALL(RETURN_VOID, 0x0040f850, 1, ESI(time));
+    ASM_CALL(RETURN_VOID, 0x0040f850, 0, ESI(time));
 }
 
 

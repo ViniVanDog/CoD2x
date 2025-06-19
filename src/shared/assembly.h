@@ -35,13 +35,17 @@ If the assembly code modifies global memory (e.g., via pointers), add "memory" t
     __asm__ volatile("movl %0, %%" dest "\n" : : "m"(src) : "memory", dest)
 
 #define ASM__call(func) \
-    __asm__ volatile("call *%0\n" : : "m"(func) : "memory")
+    __asm__ volatile("call *%0\n" : : "m"(func) : \
+        "memory", "cc", \
+        "eax", "ebx", "ecx", "edx", "esi", "edi", /*"ebp",*/ /*"esp",*/ \
+        "st","st(1)","st(2)","st(3)", "st(4)","st(5)","st(6)","st(7)", \
+        "xmm0","xmm1","xmm2","xmm3", "xmm4","xmm5","xmm6","xmm7")
 
 #define ASM__add(dest, imm) \
-    __asm__ volatile("addl %0, %%" dest "\n" : : "i"(imm) : "memory", dest)
+    __asm__ volatile("addl %0, %%" dest "\n" : : "i"(imm) : "memory", "cc", dest)
 
 #define ASM__add_esp(bytes) \
-    __asm__ volatile("addl %0, %%esp\n" : : "i"(bytes) : "memory")
+    __asm__ volatile("addl %0, %%esp\n" : : "i"(bytes) : "memory", "cc")
 
 #define ASM__movr(dest, src) \
     __asm__ volatile("movl %%" src ", %0\n" : "=m"(dest) : : "memory", src)
