@@ -191,10 +191,6 @@ bool updater_downloadAndReplaceDllFile(const char *url, char *errorBuffer, size_
 }
 
 
-void CL_BuildMd5StrFromCDKey(char* out) {
-    ASM_CALL(RETURN_VOID, 0x0040cfc0, 1, PUSH(out));
-}
-
 
 // This function is called on startup to check for updates
 // Original func: 0x0041162f 

@@ -127,5 +127,17 @@ inline void CL_AddDebugCrossPoint(float const* center, float size, float const* 
 	CL_AddDebugLine(start, end, color, duration, depthTest, pernament);
 }
 
+// Builds MD5 string from CD key and stores it in the provided output buffer.
+inline void CL_BuildMd5StrFromCDKey(char* out) {
+    ASM_CALL(RETURN_VOID, 0x0040cfc0, 1, PUSH(out));
+}
+
+// Builds MD5 string from the provided buffer and length, returning a pointer to the result.
+// The MD5 is computed twice, each time using different seeds for the MD5 algorithm.
+inline char* CL_BuildMD5(const char* buffer, int len) {
+	char* ret;
+	ASM_CALL(RETURN(ret), 0x004bc1d0, 0, EAX(buffer), EDX(len));
+	return ret;
+}
 
 #endif
