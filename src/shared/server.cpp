@@ -8,6 +8,7 @@
 #include "cod2_net.h"
 #include "cod2_server.h"
 #include "cod2_file.h"
+#include "cod2_entity.h"
 #if COD2X_WIN32
 #include "../mss32/updater.h"
 #endif
@@ -29,7 +30,10 @@ dvar_t*		sv_master[MAX_MASTER_SERVERS];
 netaddr_s	masterServerAddr[MAX_MASTER_SERVERS] = { {}, {}, {} };
 dvar_t*		sv_cracked;
 dvar_t*		showpacketstrings;
+dvar_t*		sv_playerBroadcastLimit;
 int 		nextIPTime = 0;
+
+extern dvar_t* g_cod2x;
 
 
 void SV_VoicePacket(netaddr_s from, msg_t *msg) { 
@@ -864,6 +868,39 @@ void SV_SpawnServer(char* mapname) {
 void G_RunFrame(int time) {
     // Call the original function
     ASM_CALL(RETURN_VOID, ADDR(0x004fd1b0, 0x0810a13a), WL(0, 1), WL(EAX, PUSH)(time));
+
+
+	if (sv_playerBroadcastLimit->value.integer > 0) {
+
+		// Count number of players
+		int numPlayers = 0;
+		for (int i = 0; i < MAX_GENTITIES; i++)
+		{
+			gentity_t* ent = &g_entities[i];
+			if (ent->client && ent->r.inuse && ent->s.eType == ET_PLAYER)
+			{
+				numPlayers++;
+			}
+		}
+
+		// If there are less than 15 players, send all players to all clients
+		// This is to prevent sending too many players to clients when there are many players, which can cause performance issues
+		if (numPlayers <= sv_playerBroadcastLimit->value.integer)
+		{
+			// Loop all gentities and set broadcastTime that will force to send info about all clients to all players
+			// The game by default sends only "visible" (related to portaling / PVS) entities to the clients.
+			// It make sense to not send data about players if the player is not visible, but that is causing issues with sounds - player's sounds (shooting, footsteps, etc.) are not heard by other players if they are not visible.
+			// The game internally uses broadcastTime to determine if the entity should be sent to the client, we will use it to force sending all players to all clients.
+			for (int i = 0; i < MAX_GENTITIES; i++)
+			{
+				gentity_t* ent = &g_entities[i];
+				if (ent->client && ent->r.inuse && ent->s.eType == ET_PLAYER)
+				{
+					ent->r.broadcastTime = svs_time + 300; // if we keep broadcastTime bigger then svs.time, the client will be sent to all other clients
+				}
+			}
+		}
+	}
 }
 
 void G_RunFrame_Win32() {
@@ -891,7 +928,10 @@ void server_init()
 	
 	showpacketstrings = Dvar_RegisterBool("showPacketStrings", false, DVAR_CHANGEABLE_RESET);
 
-	
+	// Maximum number of players that will be sent to all clients, if there are more players, only visible players will be sent
+	sv_playerBroadcastLimit = Dvar_RegisterInt("sv_playerBroadcastLimit", 15, 0, 64, (dvarFlags_e)(DVAR_CHANGEABLE_RESET));
+
+
     Cmd_AddCommand("unbanAll", server_unbanAll_command);
 
 	// CoD2x: Command to get IP and port of this server

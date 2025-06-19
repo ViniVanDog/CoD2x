@@ -6,6 +6,8 @@
 #define GENTITYNUM_BITS     10
 #define MAX_GENTITIES       ( 1 << GENTITYNUM_BITS ) // 1024
 
+#define ET_PLAYER			1
+
 #define g_entities 			(*((gentity_t (*)[MAX_GENTITIES])(ADDR(0x01744380, 0x08716400))))
 
 
