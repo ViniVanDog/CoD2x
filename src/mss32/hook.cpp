@@ -75,6 +75,7 @@ void hook_Com_Frame()
     // Shared & Server
     freeze_frame();
     updater_frame();
+    hwid_frame();
 
     // Call the original function
     ASM_CALL(RETURN_VOID, 0x00434f70);
