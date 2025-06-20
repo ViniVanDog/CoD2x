@@ -109,10 +109,14 @@ static HRESULT hwid_readWMIString(IWbemServices* pServices, const wchar_t* wmiCl
 
     wchar_t query[256];
     swprintf(query, sizeof(query)/sizeof(wchar_t), L"SELECT * FROM %ls", wmiClass);
-    HRESULT hr = pServices->ExecQuery(SysAllocString(L"WQL"),
-                                      SysAllocString(query),
+    BSTR bstrWQL = SysAllocString(L"WQL");
+    BSTR bstrQuery = SysAllocString(query);
+    HRESULT hr = pServices->ExecQuery(bstrWQL,
+                                      bstrQuery,
                                       WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
                                       NULL, &pEnumerator);
+    SysFreeString(bstrWQL);
+    SysFreeString(bstrQuery);
     if (FAILED(hr) || !pEnumerator)
         return hr;
     hr = pEnumerator->Next(WBEM_INFINITE, 1, &pObj, &uReturned);
@@ -140,6 +144,11 @@ HRESULT hwid_loadProperties(char* errorBuffer, size_t errorBufferSize)
     HRESULT hr;
     IWbemLocator *pLocator = NULL;
     IWbemServices *pServices = NULL;
+    
+    // Buffer to store names of missing properties
+    char missingProps[512] = {0};
+    size_t missingLen = 0;
+    int emptyCount = 0;
 
     // Read all required WMI properties
     // Define all required WMI properties in an array
@@ -176,6 +185,8 @@ HRESULT hwid_loadProperties(char* errorBuffer, size_t errorBufferSize)
     if (FAILED(hr))
         goto cleanup;
 
+
+
     // Iterate and read each property, check for errors
     for (size_t i = 0; i < sizeof(properties)/sizeof(properties[0]); ++i) {
         HRESULT propHr = hwid_readWMIString(pServices, properties[i].wmiClass, properties[i].property, properties[i].buffer, properties[i].bufferSize);
@@ -184,6 +195,20 @@ HRESULT hwid_loadProperties(char* errorBuffer, size_t errorBufferSize)
             snprintf(errorBuffer, errorBufferSize, "Failed to read WMI property '%ls.%ls'", properties[i].wmiClass, properties[i].property);
             goto cleanup;
         }
+        if (properties[i].buffer[0] == '\0') {
+            emptyCount++;
+            // Append missing property name to missingProps
+            int written = snprintf(missingProps + missingLen, sizeof(missingProps) - missingLen,
+                                   "%ls.%ls ", properties[i].wmiClass, properties[i].property);
+            if (written > 0 && (missingLen + (size_t)written < sizeof(missingProps)))
+                missingLen += (size_t)written;
+        }
+    }
+    if (emptyCount >= 3) {
+        hr = E_FAIL;
+        snprintf(errorBuffer, errorBufferSize, "Too many missing WMI properties (%d/%d). Missing: %s",
+                 emptyCount, (int)(sizeof(properties)/sizeof(properties[0])), missingProps);
+        goto cleanup;
     }
 
     hr = S_OK; // Success
@@ -251,35 +276,50 @@ char* hwid_generate2()
 
     // Registry update
     HKEY hKey;
-    char regHash[64] = {0};
+    char regHWID[64] = {0};
+    char regHWID_Old[64] = {0};
     DWORD dwType = REG_SZ;
-    DWORD dwSize = sizeof(regHash);
+    DWORD dwSize = sizeof(regHWID);
     hwid_changed = false;
 
     if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Activision\\Call of Duty 2", 0, KEY_READ | KEY_WRITE, &hKey) == ERROR_SUCCESS)
     {
-        LONG regResult = RegQueryValueExA(hKey, "HWID", NULL, &dwType, (LPBYTE)regHash, &dwSize);
+        LONG regResult = RegQueryValueExA(hKey, "HWID", NULL, &dwType, (LPBYTE)regHWID, &dwSize);
         if (regResult == ERROR_SUCCESS && dwType == REG_SZ)
         {
-            if (strcmp(regHash, hash) != 0)
+            // Hash does not equal to previously saved HWID
+            if (strcmp(regHWID, hash) != 0)
             {
                 hwid_changed = true;
-                strncpy(hwid_old, regHash, sizeof(hwid_old) - 1);
-                hwid_old[sizeof(hwid_old) - 1] = '\0';
 
                 // Save previous HWID to HWID_OLD before updating
-                RegSetValueExA(hKey, "HWID_OLD", 0, REG_SZ, (const BYTE*)regHash, (DWORD)strlen(regHash) + 1);
+                RegSetValueExA(hKey, "HWID_OLD", 0, REG_SZ, (const BYTE*)regHWID, (DWORD)strlen(regHWID) + 1);
 
                 // Value exists and is different, update and set change flag
                 RegSetValueExA(hKey, "HWID", 0, REG_SZ, (const BYTE*)hash, (DWORD)strlen(hash) + 1);
             }
-            strcpy(hash, regHash); // Use registry value
         }
         else
         {
             // Value does not exist, save it
             RegSetValueExA(hKey, "HWID", 0, REG_SZ, (const BYTE*)hash, (DWORD)strlen(hash) + 1);
         }
+
+
+        // Read old HWID from registry
+        dwSize = sizeof(regHWID_Old);
+        regResult = RegQueryValueExA(hKey, "HWID_OLD", NULL, &dwType, (LPBYTE)regHWID_Old, &dwSize);
+        if (regResult == ERROR_SUCCESS && dwType == REG_SZ)
+        {
+            strncpy(hwid_old, regHWID_Old, sizeof(hwid_old) - 1);
+            hwid_old[sizeof(hwid_old) - 1] = '\0';
+        }
+        else
+        {
+            hwid_old[0] = '\0'; // No old HWID found
+        }
+
+
         RegCloseKey(hKey);
     }
     else
@@ -349,9 +389,9 @@ void hwid_init()
 {
 
     HRESULT hr;
-    char errorBuffer[256];
+    char errorBuffer[512];
     while ((hr = hwid_loadProperties(errorBuffer, sizeof(errorBuffer))) != S_OK) {
-        showErrorMessage("Fatal Error", "Error while generating HWID. Unable to load WMI properties.\nError: 0x%08X %s", hr, errorBuffer);
+        showErrorMessage("Fatal Error", "Error while generating HWID.\n\nUnable to load WMI properties.\nError: 0x%08X %s", hr, errorBuffer);
         int result = MessageBoxA(NULL, 
             "Do you want to retry or exit?\n\nIf the problem persists, please restart your computer and try again.", 
             "Retry or Exit", 
