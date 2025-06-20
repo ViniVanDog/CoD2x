@@ -47,6 +47,11 @@ typedef struct {
 } centity_t; //size=548, dw=137
 
 
+typedef struct {
+	int				pad[3];
+	playerState_t	ps;
+} snapshot_t;
+
 typedef struct
 {
 	int x;
@@ -66,11 +71,17 @@ typedef struct
 {
 	int clientFrame;
 	int clientNum;
-	int padding[7];
-	void *snap;
-	void *nextSnap;
+    int isDemoPlaying;
+    int cubeMapIndex;
+    int cubeMap;
+    int isMainMenuClosed;
+    int latestSnapshotNum;
+    int latestSnapshotTime;
 
-	byte padding0[154520];
+	snapshot_t *snap;
+	snapshot_t *nextSnap;
+
+	byte padding0[154524];
 
 	playerState_t predictedPlayerState;
 
@@ -91,7 +102,7 @@ typedef struct
 static_assert((sizeof(cg_t) == 0xf49a0));
 static_assert(offsetof(cg_t, predictedPlayerState) == 0x025bc4);
 static_assert(offsetof(cg_t, refdef) == 0x028570);
-
+static_assert(offsetof(cg_t, kick_angles) == 0x02c098);
 
 
 inline void CL_AddDebugString(float const* xyz, float const* color, float scale, char const* text, int duration) {
