@@ -102,6 +102,7 @@ int hook_gfxDll() {
     ///////////////////////////////////////////////////////////////////
 
     window_hook_rendered();
+    updater_renderer();
 
     return ret;
 }
@@ -187,7 +188,6 @@ void hook_Com_Init(const char* cmdline) {
     }
 
     affinity_init();
-    updater_checkForUpdate(); // depends on dedicated and network system
     common_printInfo();
 }
 

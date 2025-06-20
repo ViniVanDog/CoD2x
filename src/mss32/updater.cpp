@@ -19,11 +19,19 @@
 #define clientState                   (*((clientState_e*)0x00609fe0))
 #define demo_isPlaying                (*((int*)0x0064a170))
 
-bool updater_forcedUpdate = false;
-struct netaddr_s updater_address = { NA_INIT, {0}, 0, {0} };
-dvar_t* sv_update;
+int                 updater_lastClientState = -1;
+int                 updater_lastMainMenuClosed = 0;
+bool                updater_waitingForResponse = false;
+int                 updater_waitingForResponseRepeats = 0;
+DWORD               updater_waitingForResponseTime = 0;
+bool                updater_forcedUpdate = false;
+struct netaddr_s    updater_address = { NA_INIT, {0}, 0, {0} };
+dvar_t*             sv_update;
 
 extern dvar_t *cl_hwid;
+extern dvar_t *cl_hwid2;
+extern char hwid_old[33];  
+extern char hwid_regid[33];
 
 
 void updater_showForceUpdateDialog() {
@@ -193,33 +201,41 @@ bool updater_downloadAndReplaceDllFile(const char *url, char *errorBuffer, size_
 
 
 // This function is called on startup to check for updates
-// Original func: 0x0041162f 
+// Original func: 0x0041162f
 bool updater_sendRequest() {
 
-    Com_DPrintf("Resolving AutoUpdate Server %s...\n", SERVER_UPDATE_URI);
-    if (!NET_StringToAdr(SERVER_UPDATE_URI, &updater_address))
+    // Resolve the Auto-Update server address if not already resolved
+    if (updater_address.type == NA_INIT) 
     {
-        Com_Printf("\nFailed to resolve AutoUpdate server %s.\n", SERVER_UPDATE_URI);
-        return 0;
+        Com_DPrintf("Resolving AutoUpdate Server %s...\n", SERVER_UPDATE_URI);
+        if (!NET_StringToAdr(SERVER_UPDATE_URI, &updater_address))
+        {
+            Com_Printf("\nFailed to resolve AutoUpdate server %s.\n", SERVER_UPDATE_URI);
+            return 0;
+        }
+
+        updater_address.port = BigShort(SERVER_UPDATE_PORT); // Swap the port bytes
+
+        Com_DPrintf("AutoUpdate resolved to %s\n", NET_AdrToString(updater_address));
     }
 
-    updater_address.port = BigShort(SERVER_UPDATE_PORT); // Swap the port bytes
-
-    Com_DPrintf("AutoUpdate resolved to %s\n", NET_AdrToString(updater_address));
-
-    Com_Printf("Checking for updates...\n");
+    Com_Printf("Auto-Updater: Checking for updates...\n");
 
     int hwid = cl_hwid ? cl_hwid->value.integer : 0;
+    const char* hwid2 = cl_hwid2 ? cl_hwid2->value.string : 0;
 
     char CDKeyHash[34];
     CL_BuildMd5StrFromCDKey(CDKeyHash);
 
     // Send the request to the Auto-Update server
     char* udpPayload = (dedicated->value.boolean == 0) ? 
-        va("getUpdateInfo2 \"CoD2x MP\" \"" APP_VERSION "\" \"win-x86\" \"client\" \"%i\" \"%s\"\n", hwid, CDKeyHash): // Client
+        va("getUpdateInfo2 \"CoD2x MP\" \"" APP_VERSION "\" \"win-x86\" \"client\" \"%i\" \"%s\" \"%s\" \"%s\" \"%s\"\n", hwid, CDKeyHash, hwid2, hwid_old, hwid_regid) : // Client
         va("getUpdateInfo2 \"CoD2x MP\" \"" APP_VERSION "\" \"win-x86\" \"server\"\n"); // Server
 
     bool status = NET_OutOfBandPrint(NS_CLIENT, updater_address, udpPayload);
+
+    updater_waitingForResponse = true;
+    updater_waitingForResponseTime = GetTickCount();
 
     Com_Printf("-----------------------------------\n");
 
@@ -245,6 +261,9 @@ void updater_updatePacketResponse(struct netaddr_s addr)
     }
 
     Com_Printf("-----------------------------------\n");
+
+    updater_waitingForResponse = false;
+    updater_waitingForResponseRepeats = 0;
 
     const char* updateAvailableNumber = Cmd_Argv(1);
     int updateAvailable = atol(updateAvailableNumber);
@@ -324,12 +343,42 @@ void updater_checkForUpdate() {
     }
 }
 
+
+/** Called on renderer load (also after vid_restart) */
+void updater_renderer() {
+    updater_lastClientState = -1; // Reset last client state to ensure we check for updates on next frame
+}
+
 /** Called every frame on frame start. */
 void updater_frame() {
     // If the forced update is available and player leaves main menu, show error
     if (updater_forcedUpdate && dedicated->value.integer == 0 && clientState > CLIENT_STATE_DISCONNECTED && demo_isPlaying == 0) {
         updater_showForceUpdateDialog();
-    }   
+    }  
+    
+    // If player disconnect (so main menu is opened), check for updates again
+    if (clientState != updater_lastClientState && clientState == CLIENT_STATE_DISCONNECTED) {
+        updater_waitingForResponseRepeats = 0;
+        updater_checkForUpdate(); // Check for updates again
+    }
+
+    // If we opened main menu while we were connected to the server, check for updates
+    if (clientState == CLIENT_STATE_ACTIVE && !cg.isMainMenuClosed && cg.isMainMenuClosed != updater_lastMainMenuClosed) {
+        updater_waitingForResponseRepeats = 0;
+        updater_checkForUpdate(); // Check for updates again
+    }
+
+    // We did not receive a response from the Auto-Update server within 5 seconds
+    if (updater_waitingForResponse && (GetTickCount() - updater_waitingForResponseTime) > 5000 && updater_waitingForResponseRepeats < 5) {
+        Com_Printf("Auto-Updater: Request timed out.\n");
+        // Check again for updates
+        updater_waitingForResponse = false;
+        updater_waitingForResponseRepeats++;
+        updater_checkForUpdate();
+    }
+
+    updater_lastClientState = clientState;
+    updater_lastMainMenuClosed = cg.isMainMenuClosed; // Update last main menu closed state
 }
 
 
