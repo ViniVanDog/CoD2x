@@ -80,6 +80,9 @@
 #include "assembly.h"
 
 void escape_string(char* buffer, size_t bufferSize, const void* data, size_t length);
+uint16_t crc16_ccitt(const uint8_t* data, size_t length);
+int base64_encode(const uint8_t* input, size_t len, char* output, size_t out_size);
+int base64_decode(const char* input, uint8_t* output, size_t out_size);
 
 #endif
 
