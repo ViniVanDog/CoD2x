@@ -4,6 +4,7 @@
 #include <wininet.h>
 
 #include "shared.h"
+#include "hwid.h"
 #include "../shared/cod2_dvars.h"
 #include "../shared/cod2_client.h"
 #include "../shared/cod2_net.h"
@@ -32,6 +33,8 @@ extern dvar_t *cl_hwid;
 extern dvar_t *cl_hwid2;
 extern char hwid_old[33];  
 extern char hwid_regid[33];
+extern char hwid_changed_diff[1024];
+extern int hwid_changed_count;
 
 
 void updater_showForceUpdateDialog() {
@@ -221,16 +224,53 @@ bool updater_sendRequest() {
 
     Com_Printf("Auto-Updater: Checking for updates...\n");
 
-    int hwid = cl_hwid ? cl_hwid->value.integer : 0;
-    const char* hwid2 = cl_hwid2 ? cl_hwid2->value.string : 0;
+    char udpPayload[4096];
 
-    char CDKeyHash[34];
-    CL_BuildMd5StrFromCDKey(CDKeyHash);
+    if (dedicated->value.boolean == 0) // Client
+    {
+        int hwid = cl_hwid ? cl_hwid->value.integer : 0;
+        const char* hwid2 = cl_hwid2 ? cl_hwid2->value.string : "";
 
-    // Send the request to the Auto-Update server
-    char* udpPayload = (dedicated->value.boolean == 0) ? 
-        va("getUpdateInfo2 \"CoD2x MP\" \"" APP_VERSION "\" \"win-x86\" \"client\" \"%i\" \"%s\" \"%s\" \"%s\" \"%s\"\n", hwid, CDKeyHash, hwid2, hwid_old, hwid_regid) : // Client
-        va("getUpdateInfo2 \"CoD2x MP\" \"" APP_VERSION "\" \"win-x86\" \"server\"\n"); // Server
+        char CDKeyHash[34];
+        CL_BuildMd5StrFromCDKey(CDKeyHash);
+
+        char hwid_changed_diff_escaped[1024] = {};
+        // Escape the hwid_changed_diff for use in the UDP payload
+        for (size_t i = 0; i < sizeof(hwid_changed_diff) - 1 && hwid_changed_diff[i] != '\0'; ++i) {
+            if (hwid_changed_diff[i] == '"') {
+                hwid_changed_diff_escaped[i] = '\'';
+            } else {
+                hwid_changed_diff_escaped[i] = hwid_changed_diff[i];
+            }
+        }
+
+        char data[2048] = {0};
+        snprintf(data, sizeof(data), "\"%s\" \"%s\" \"%i\" \"%s\" \"%s\" \"%i\" \"%s\"",
+            CDKeyHash, hwid_regid, hwid, hwid2, hwid_old, hwid_changed_count, hwid_changed_diff_escaped);
+
+        // Base64 encode the data
+        char encodedData[2800] = {0};
+        int base64status = base64_encode((const uint8_t*)data, strlen(data), encodedData, sizeof(encodedData));
+        if (base64status < 0) {
+            SHOW_ERROR("Failed to encode data for Auto-Update request.");
+            exit(1);
+        }
+
+        // Calculate the CRC16 of the data
+        uint16_t crc = crc16_ccitt((const uint8_t*)encodedData, strlen(encodedData));
+
+        // Format the UDP payload
+        snprintf(udpPayload, sizeof(udpPayload),
+            "getUpdateInfo3 \"CoD2x MP\" \"" APP_VERSION "\" \"win-x86\" \"client\" \"%04x\" \"%s\"\n",
+            crc, encodedData);
+
+    } else {
+        // Server
+        snprintf(udpPayload, sizeof(udpPayload),
+            "getUpdateInfo2 \"CoD2x MP\" \"" APP_VERSION "\" \"win-x86\" \"server\"\n");
+    }
+
+
 
     bool status = NET_OutOfBandPrint(NS_CLIENT, updater_address, udpPayload);
 
@@ -264,6 +304,8 @@ void updater_updatePacketResponse(struct netaddr_s addr)
 
     updater_waitingForResponse = false;
     updater_waitingForResponseRepeats = 0;
+
+    hwid_clearRegistryFromHWIDChange();
 
     const char* updateAvailableNumber = Cmd_Argv(1);
     int updateAvailable = atol(updateAvailableNumber);

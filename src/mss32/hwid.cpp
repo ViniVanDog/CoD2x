@@ -29,6 +29,8 @@ dvar_t *cl_hwid2;
 
 // Global flags and buffers
 bool hwid_changed = false;               // Indicates if HWID changed since last check
+char hwid_changed_diff[1024] = {};       // Stores the difference in HWID components
+int  hwid_changed_count = 0;             // Counts how many times the HWID has changed
 char hwid_old[33] = {};                  // Stores the previous HWID
 char hwid_regid[33] = {};                // Stores the registry ID
 
@@ -247,14 +249,15 @@ int hwid_generate()
  */
 char* hwid_generate2()
 {
-    char combined[1024];
-    snprintf(combined, sizeof(combined),
+    char hwid_raw[1024];
+    snprintf(hwid_raw, sizeof(hwid_raw),
              "BIOS manufacturer: %s\nBIOS serial: %s\nCPU name: %s\nCPU ID: %s\nMotherboard manufacturer: %s\nMotherboard serial: %s\nUUID: %s\nDisk Model: %s\nTotal Memory: %s\nGPU Name: %s",
+             //"BIOS manufacturer: 0%s\nBIOS serial: 0%s\nCPU name: 0%s\nCPU ID: 0%s\nMotherboard manufacturer: 0%s\nMotherboard serial: 0%s\nUUID: 0%s\nDisk Model: 0%s\nTotal Memory: 0%s\nGPU Name: 0%s",
              hwid_bios_manufacturer, hwid_bios_serial, hwid_cpu_name, hwid_cpu_id,
              hwid_board_manufacturer, hwid_board_serial, hwid_uuid, hwid_diskModel,
              hwid_totalMem, hwid_gpuName);
 
-    //MessageBoxA(NULL, combined, "HWID", MB_OK);
+    //MessageBoxA(NULL, hwid_raw, "HWID", MB_OK);
     /*
     ---------------------------
     HWID
@@ -272,12 +275,11 @@ char* hwid_generate2()
     ---------------------------
     */
 
-    char* hash = CL_BuildMD5(combined, strlen(combined));
+    char* hwid_MD5 = CL_BuildMD5(hwid_raw, strlen(hwid_raw));
 
     // Registry update
     HKEY hKey;
     char regHWID[64] = {0};
-    char regHWID_Old[64] = {0};
     DWORD dwType = REG_SZ;
     DWORD dwSize = sizeof(regHWID);
     hwid_changed = false;
@@ -288,36 +290,143 @@ char* hwid_generate2()
         if (regResult == ERROR_SUCCESS && dwType == REG_SZ)
         {
             // Hash does not equal to previously saved HWID
-            if (strcmp(regHWID, hash) != 0)
+            if (strcmp(regHWID, hwid_MD5) != 0)
             {
                 hwid_changed = true;
 
                 // Save previous HWID to HWID_OLD before updating
-                RegSetValueExA(hKey, "HWID_OLD", 0, REG_SZ, (const BYTE*)regHWID, (DWORD)strlen(regHWID) + 1);
+                regResult = RegSetValueExA(hKey, "HWID_OLD", 0, REG_SZ, (const BYTE*)regHWID, (DWORD)strlen(regHWID) + 1);
+                if (regResult != ERROR_SUCCESS)
+                {
+                    SHOW_ERROR("Failed to save old HWID to registry.");
+                    exit(1);
+                }
 
-                // Value exists and is different, update and set change flag
-                RegSetValueExA(hKey, "HWID", 0, REG_SZ, (const BYTE*)hash, (DWORD)strlen(hash) + 1);
+                // Increase HWID_DIFF_COUNT in registry
+                DWORD dwCount = 1;
+                DWORD dwCountSize = sizeof(dwCount);
+                regResult = RegQueryValueExA(hKey, "HWID_DIFF_COUNT", NULL, &dwType, (LPBYTE)&dwCount, &dwCountSize);
+                if (regResult == ERROR_SUCCESS && dwType == REG_DWORD)
+                    dwCount++;
+                regResult = RegSetValueExA(hKey, "HWID_DIFF_COUNT", 0, REG_DWORD, (const BYTE*)&dwCount, sizeof(dwCount));
+                if (regResult != ERROR_SUCCESS)
+                {
+                    SHOW_ERROR("Failed to update HWID_DIFF_COUNT in registry.");
+                    exit(1);
+                }
+
+                // Read HWID_SOURCE from registry and compare it with the new combined string
+                char regHWID_Source[1024] = {0};
+                DWORD dwSizeSource = sizeof(regHWID_Source);
+                regResult = RegQueryValueExA(hKey, "HWID_SOURCE", NULL, &dwType, (LPBYTE)regHWID_Source, &dwSizeSource);
+                if (regResult != ERROR_SUCCESS || dwType != REG_SZ) {
+                    //SHOW_ERROR("Failed to read HWID_SOURCE from registry.");
+                    //exit(1);
+                    // Ignore error as it might not exists if moved from an older version
+                    regHWID_Source[0] = '\0'; // No HWID_SOURCE found
+                } else {
+                    // Decode
+                    char hwid_raw_base64[2048] = {0};
+                    int base64status = base64_decode(regHWID_Source, (uint8_t*)hwid_raw_base64, sizeof(hwid_raw_base64));
+                    if (base64status < 0) {
+                        SHOW_ERROR("Failed to decode HWID source from Base64.");
+                        exit(1);
+                    }
+                    // Find the changed lines
+                    if (strcmp(hwid_raw_base64, hwid_raw) != 0) {
+                        // Find the changed lines
+                        char* srcCopy = _strdup(hwid_raw_base64);
+                        char* newCopy = _strdup(hwid_raw);
+                        if (srcCopy && newCopy) {
+                            char* srcSave;
+                            char* newSave;
+                            char* srcLine = strtok_s(srcCopy, "\n", &srcSave);
+                            char* newLine = strtok_s(newCopy, "\n", &newSave);
+                            int lineNum = 1;
+                            while (srcLine && newLine) {
+                                if (strcmp(srcLine, newLine) != 0) {
+                                    char msg[256];
+                                    snprintf(msg, sizeof(msg), "%s\n%s\n", srcLine, newLine);
+                                    strncat(hwid_changed_diff, msg, sizeof(hwid_changed_diff) - strlen(hwid_changed_diff) - 1);
+                                }
+                                srcLine = strtok_s(NULL, "\n", &srcSave);
+                                newLine = strtok_s(NULL, "\n", &newSave);
+                                ++lineNum;
+                            }
+                        }
+                        free(srcCopy);
+                        free(newCopy);
+
+                        // If there are any changed lines, show them in a single MessageBox
+                        if (hwid_changed_diff[0] != '\0') {
+                            //MessageBoxA(NULL, hwid_changed_diff, "HWID Change Detected", MB_OK | MB_ICONWARNING);
+
+                            // Save the difference to the registry
+                            regResult = RegSetValueExA(hKey, "HWID_DIFF", 0, REG_SZ, (const BYTE*)hwid_changed_diff, (DWORD)strlen(hwid_changed_diff) + 1);
+                            if (regResult != ERROR_SUCCESS)
+                            {
+                                SHOW_ERROR("Failed to save HWID change difference to registry.");
+                                exit(1);
+                            }
+                        }
+                    } else {
+                        SHOW_ERROR("HWID source has not changed, but HWID hash is different. This should not happen.");
+                        exit(1);
+                    }
+                }
             }
         }
-        else
+
+        // Save new HWID to registry
+        regResult = RegSetValueExA(hKey, "HWID", 0, REG_SZ, (const BYTE*)hwid_MD5, (DWORD)strlen(hwid_MD5) + 1);
+        if (regResult != ERROR_SUCCESS)
         {
-            // Value does not exist, save it
-            RegSetValueExA(hKey, "HWID", 0, REG_SZ, (const BYTE*)hash, (DWORD)strlen(hash) + 1);
+            SHOW_ERROR("Failed to save HWID to registry.");
+            exit(1);
         }
+
+        // Save the source of HWID into registry, encode it
+        char hwid_raw_base64[2048] = {0};
+        int base64status = base64_encode((const uint8_t*)hwid_raw, strlen(hwid_raw), hwid_raw_base64, sizeof(hwid_raw_base64));
+        if (base64status < 0) {
+            SHOW_ERROR("Failed to encode HWID source to Base64.");
+            exit(1);
+        }
+        regResult = RegSetValueExA(hKey, "HWID_SOURCE", 0, REG_SZ, (const BYTE*)hwid_raw_base64, (DWORD)strlen(hwid_raw_base64) + 1);
+        if (regResult != ERROR_SUCCESS)
+        {
+            SHOW_ERROR("Failed to save HWID source to registry.");
+            exit(1);
+        }
+        
 
 
         // Read old HWID from registry
-        dwSize = sizeof(regHWID_Old);
-        regResult = RegQueryValueExA(hKey, "HWID_OLD", NULL, &dwType, (LPBYTE)regHWID_Old, &dwSize);
+        dwSize = sizeof(hwid_old);
+        regResult = RegQueryValueExA(hKey, "HWID_OLD", NULL, &dwType, (LPBYTE)hwid_old, &dwSize);
         if (regResult == ERROR_SUCCESS && dwType == REG_SZ)
-        {
-            strncpy(hwid_old, regHWID_Old, sizeof(hwid_old) - 1);
             hwid_old[sizeof(hwid_old) - 1] = '\0';
-        }
         else
-        {
             hwid_old[0] = '\0'; // No old HWID found
-        }
+
+
+        // Read diff from registry
+        dwSize = sizeof(hwid_changed_diff);
+        regResult = RegQueryValueExA(hKey, "HWID_DIFF", NULL, &dwType, (LPBYTE)hwid_changed_diff, &dwSize);
+        if (regResult == ERROR_SUCCESS && dwType == REG_SZ)
+            hwid_changed_diff[sizeof(hwid_changed_diff) - 1] = '\0'; // Ensure null-termination
+        else
+            hwid_changed_diff[0] = '\0'; // No diff found
+
+        // Read HWID_DIFF_COUNT from registry
+        DWORD dwCount = 0;
+        DWORD dwCountSize = sizeof(dwCount);
+        regResult = RegQueryValueExA(hKey, "HWID_DIFF_COUNT", NULL, &dwType, (LPBYTE)&dwCount, &dwCountSize);
+        if (regResult == ERROR_SUCCESS && dwType == REG_DWORD)
+            hwid_changed_count = (int)dwCount;
+        else
+            hwid_changed_count = 0; // No count found, reset to 0
+
 
 
         RegCloseKey(hKey);
@@ -328,8 +437,31 @@ char* hwid_generate2()
         exit(1);
     }
 
-    return hash;
+    return hwid_MD5;
 }
+
+
+void hwid_clearRegistryFromHWIDChange() {
+    HKEY hKey;
+    if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Activision\\Call of Duty 2", 0, KEY_READ | KEY_WRITE, &hKey) == ERROR_SUCCESS)
+    {
+        // Clear the HWID change related values
+        RegDeleteValueA(hKey, "HWID_DIFF");
+        RegDeleteValueA(hKey, "HWID_OLD");
+
+        // Reset also memory
+        hwid_changed_diff[0] = '\0';
+        hwid_old[0] = '\0';
+
+        RegCloseKey(hKey);
+    }
+    else
+    {
+        SHOW_ERROR("Failed to open registry key for HWID.");
+        exit(1);
+    }
+}
+
 
 /**
  * Generates a unique REGID for the game, used for computer identification.
@@ -350,6 +482,8 @@ void hwid_generate_regid() {
             char randomStr[64];
             snprintf(randomStr, sizeof(randomStr), "%u_%u", (unsigned int)GetTickCount(), rand());
             char* regidHash = CL_BuildMD5(randomStr, strlen(randomStr));
+
+            // Save new REGID to registry        
             RegSetValueExA(hKey, "REGID", 0, REG_SZ, (const BYTE*)regidHash, (DWORD)strlen(regidHash) + 1);
 
             strncpy(hwid_regid, regidHash, sizeof(hwid_regid) - 1);
@@ -387,7 +521,6 @@ void hwid_frame()
 /** Called once at game start after common initialization. Used to initialize variables, cvars, etc. */
 void hwid_init()
 {
-
     HRESULT hr;
     char errorBuffer[512];
     while ((hr = hwid_loadProperties(errorBuffer, sizeof(errorBuffer))) != S_OK) {
