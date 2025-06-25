@@ -17,6 +17,7 @@
 #include "hwid.h"
 #include "master_server.h"
 #include "registry.h"
+#include "error.h"
 #include "../shared/common.h"
 #include "../shared/server.h"
 #include "../shared/game.h"
@@ -40,7 +41,6 @@ void hook_CL_Frame()
     // Call the original function
     ASM_CALL(RETURN_VOID, 0x0040f850, 0, ESI(time));
 }
-
 
 /**
  * Com_Frame
@@ -142,6 +142,7 @@ void hook_CL_Init() {
     #endif
 
     // Client
+    error_init();       // reporting errors and crashes
     hwid_init(); 
     window_init();      // depends on being called before gfx dll is loaded
     rinput_init();
@@ -237,6 +238,7 @@ bool hook_patch() {
     patch_call(0x004102b5, (unsigned int)hook_gfxDll);
 
     // Patch client side
+    error_patch();
     freeze_patch();
     window_patch();
     rinput_patch();

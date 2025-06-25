@@ -5,13 +5,10 @@
 #include <dbghelp.h>
 
 #include "shared.h"
-#include "../shared/cod2_shared.h"
-#include "../shared/cod2_net.h"
-#include "../shared/cod2_dvars.h"
+#include "error.h"
+
 
 volatile int exception_processCrashed = false;
-extern struct netaddr_s updater_address;
-extern dvar_t *cl_hwid;
 
 
 /*
@@ -183,15 +180,7 @@ LONG WINAPI exception_handler(EXCEPTION_POINTERS* pExceptionInfo) {
         }
     }
 
-    if (updater_address.type > NA_BAD) { // avoid another crash if updater is not initialized yet
-        int hwid = cl_hwid ? cl_hwid->value.integer : 0;
-        // Send diagnostics data to server
-        char* udpPayload = va(
-            //crashData "CoD2x MP"      "1.0.0"          "win-x86" "{HWID}" "{CODE}" "{ADDRESS}" "{MODULE_NAME}" "{MODULE_OFFSET}" "{STACK_DUMP}"
-            "crashData \"CoD2x MP\" \"" APP_VERSION "\" \"win-x86\" \"%i\" \"0x%08x\" \"0x%p\" \"%s\" \"0x%p\" \"%s\"\n", 
-            hwid, (unsigned int)(exceptionCode), exceptionAddress, moduleName, fileOffset, stackDump);
-        NET_OutOfBandPrint(NS_CLIENT, updater_address, udpPayload);
-    }
+    error_sendCrashData((unsigned int)exceptionCode, exceptionAddress, moduleName, fileOffset, stackDump);
 
     // Ask user if they want to create a debug file
     char tempBuffer[1024];

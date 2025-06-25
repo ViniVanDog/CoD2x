@@ -202,11 +202,7 @@ bool updater_downloadAndReplaceDllFile(const char *url, char *errorBuffer, size_
 }
 
 
-
-// This function is called on startup to check for updates
-// Original func: 0x0041162f
-bool updater_sendRequest() {
-
+bool updater_resolveServerAddress() {
     // Resolve the Auto-Update server address if not already resolved
     if (updater_address.type == NA_INIT) 
     {
@@ -214,13 +210,24 @@ bool updater_sendRequest() {
         if (!NET_StringToAdr(SERVER_UPDATE_URI, &updater_address))
         {
             Com_Printf("\nFailed to resolve AutoUpdate server %s.\n", SERVER_UPDATE_URI);
-            return 0;
+            return false;
         }
 
         updater_address.port = BigShort(SERVER_UPDATE_PORT); // Swap the port bytes
 
         Com_DPrintf("AutoUpdate resolved to %s\n", NET_AdrToString(updater_address));
     }
+    return true;
+}
+
+
+
+// This function is called on startup to check for updates
+// Original func: 0x0041162f
+bool updater_sendRequest() {
+
+    // Resolve the Auto-Update server address if not already resolved
+    updater_resolveServerAddress();
 
     Com_Printf("Auto-Updater: Checking for updates...\n");
 

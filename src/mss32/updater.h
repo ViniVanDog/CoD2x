@@ -3,6 +3,7 @@
 
 #include "shared.h"
 
+bool updater_resolveServerAddress();
 void updater_checkForUpdate();
 void updater_updatePacketResponse(struct netaddr_s addr);
 void updater_renderer();
