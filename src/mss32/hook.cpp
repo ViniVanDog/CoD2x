@@ -16,6 +16,7 @@
 #include "updater.h"
 #include "hwid.h"
 #include "master_server.h"
+#include "registry.h"
 #include "../shared/common.h"
 #include "../shared/server.h"
 #include "../shared/game.h"
@@ -76,6 +77,7 @@ void hook_Com_Frame()
     freeze_frame();
     updater_frame();
     hwid_frame();
+    registry_frame();      // called as last so other modules can handle version changes
 
     // Call the original function
     ASM_CALL(RETURN_VOID, 0x00434f70);
