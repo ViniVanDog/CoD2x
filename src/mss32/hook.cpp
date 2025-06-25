@@ -18,6 +18,7 @@
 #include "master_server.h"
 #include "registry.h"
 #include "error.h"
+#include "downloading.h"
 #include "../shared/common.h"
 #include "../shared/server.h"
 #include "../shared/game.h"
@@ -246,6 +247,7 @@ bool hook_patch() {
     cgame_patch();
     updater_patch();
     master_server_patch();
+    downloading_patch();
 
     // Patch server side
     common_patch();
