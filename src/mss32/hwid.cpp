@@ -43,8 +43,10 @@ char hwid_board_manufacturer[128] = {};
 char hwid_board_serial[128] = {};
 char hwid_uuid[128] = {};
 char hwid_diskModel[128] = {};
-char hwid_totalMem[128] = {};
 char hwid_gpuName[128] = {};
+
+extern bool registry_version_changed; // Flag to indicate if the version has changed
+extern char registry_previous_version[64]; // Buffer to store the previous version
 
 struct WMIProperty {
     const wchar_t *wmiClass;
@@ -52,31 +54,6 @@ struct WMIProperty {
     char *buffer;
     size_t bufferSize;
 };
-
-
-/**
- * Generates an hash from the given input string.
- *
- * @param str The input string to hash.
- * @param output The output buffer to store the hash result
- */
-void hwid_hash(const char *str, uint32_t *output)
-{
-    // FVN-1a hash
-    uint32_t hash = 2166136261u;
-    while (*str)
-    {
-        hash ^= (unsigned char)(*str++);
-        hash *= 16777619;
-    }
-
-    hash &= 0x7FFFFFFF; // clear highest bit (bit 31) to avoid negative numbers
-    if (hash == 0)
-        hash = 1; // avoid returning zero
-
-    *output = hash;
-}
-
 
 
 /*
@@ -163,7 +140,6 @@ HRESULT hwid_loadProperties(char* errorBuffer, size_t errorBufferSize)
         {L"Win32_BaseBoard", L"SerialNumber", hwid_board_serial, sizeof(hwid_board_serial)},
         {L"Win32_ComputerSystemProduct", L"UUID", hwid_uuid, sizeof(hwid_uuid)},
         {L"Win32_DiskDrive", L"Model", hwid_diskModel, sizeof(hwid_diskModel)},
-        {L"Win32_ComputerSystem", L"TotalPhysicalMemory", hwid_totalMem, sizeof(hwid_totalMem)},
         {L"Win32_VideoController", L"Name", hwid_gpuName, sizeof(hwid_gpuName)}
     };
 
@@ -224,11 +200,37 @@ cleanup:
     return hr;
 }
 
+
+
+
+/**
+ * Generates an hash from the given input string.
+ *
+ * @param str The input string to hash.
+ * @param output The output buffer to store the hash result
+ */
+void hwid_hash_FVN1A(const char *str, uint32_t *output)
+{
+    // FVN-1a hash
+    uint32_t hash = 2166136261u;
+    while (*str)
+    {
+        hash ^= (unsigned char)(*str++);
+        hash *= 16777619;
+    }
+
+    hash &= 0x7FFFFFFF; // clear highest bit (bit 31) to avoid negative numbers
+    if (hash == 0)
+        hash = 1; // avoid returning zero
+
+    *output = hash;
+}
+
 /**
  * Generates a HWID hash (integer) using a subset of the loaded properties.
  * Combines BIOS serial, CPU ID, Board serial, and UUID.
  */
-int hwid_generate()
+int hwid_generate_short()
 {
     char combined[512];
     // For this simpler HWID, use BIOS serial, CPU ID, Board serial, and UUID.
@@ -237,25 +239,80 @@ int hwid_generate()
     //MessageBoxA(NULL, combined, "HWID", MB_OK);
 
     uint32_t hash;
-    hwid_hash(combined, &hash);
+    hwid_hash_FVN1A(combined, &hash);
 
     return hash;
 }
+
+
+
+
+
+// Resets the HWID values in the registry and memory for cases when then the way HWID is generated has changed
+void hwid_restartRegistry() {
+    HKEY hKey;
+    if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Activision\\Call of Duty 2", 0, KEY_READ | KEY_WRITE, &hKey) == ERROR_SUCCESS)
+    {
+        // Clear the HWID change related values
+        RegDeleteValueA(hKey, "HWID");
+        RegDeleteValueA(hKey, "HWID_OLD");
+        RegDeleteValueA(hKey, "HWID_SOURCE");
+        RegDeleteValueA(hKey, "HWID_DIFF");
+        RegDeleteValueA(hKey, "HWID_DIFF_COUNT");
+
+        // Reset also memory
+        hwid_changed_diff[0] = '\0';
+        hwid_old[0] = '\0';
+        hwid_changed = false;
+        hwid_changed_count = 0;
+
+        RegCloseKey(hKey);
+    }
+    else
+    {
+        SHOW_ERROR("Failed to open registry key for HWID.");
+        exit(1);
+    }
+}
+
+// Resets registry values that can be removed after sending the values to update server
+void hwid_clearRegistryFromHWIDChange() {
+    HKEY hKey;
+    if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Activision\\Call of Duty 2", 0, KEY_READ | KEY_WRITE, &hKey) == ERROR_SUCCESS)
+    {
+        // Clear the HWID change related values
+        RegDeleteValueA(hKey, "HWID_DIFF");
+        RegDeleteValueA(hKey, "HWID_OLD");
+
+        // Reset also memory
+        hwid_changed_diff[0] = '\0';
+        hwid_old[0] = '\0';
+
+        RegCloseKey(hKey);
+    }
+    else
+    {
+        SHOW_ERROR("Failed to open registry key for HWID.");
+        exit(1);
+    }
+}
+
 
 /**
  * Generates a unique Hardware ID (HWID) based on the system's hardware components
  *
  * @return A pointer to the generated HWID string.
  */
-char* hwid_generate2()
+char* hwid_generate_long()
 {
     char hwid_raw[1024];
     snprintf(hwid_raw, sizeof(hwid_raw),
-             "BIOS manufacturer: %s\nBIOS serial: %s\nCPU name: %s\nCPU ID: %s\nMotherboard manufacturer: %s\nMotherboard serial: %s\nUUID: %s\nDisk Model: %s\nTotal Memory: %s\nGPU Name: %s",
-             //"BIOS manufacturer: 0%s\nBIOS serial: 0%s\nCPU name: 0%s\nCPU ID: 0%s\nMotherboard manufacturer: 0%s\nMotherboard serial: 0%s\nUUID: 0%s\nDisk Model: 0%s\nTotal Memory: 0%s\nGPU Name: 0%s",
+             "BIOS manufacturer: %s\nBIOS serial: %s\nCPU name: %s\nCPU ID: %s\nMotherboard manufacturer: %s\nMotherboard serial: %s\nUUID: %s\nDisk Model: %s\nGPU Name: %s",
+             //"BIOS manufacturer: eyza-%s\nBIOS serial: %s\nCPU name: %s\nCPU ID: %s\nMotherboard manufacturer: %s\nMotherboard serial: %s\nUUID: %s\nDisk Model: %s\nGPU Name: %s",
+             //"BIOS manufacturer: 0%s\nBIOS serial: 0%s\nCPU name: 0%s\nCPU ID: 0%s\nMotherboard manufacturer: 0%s\nMotherboard serial: 0%s\nUUID: 0%s\nDisk Model: 0%s\nGPU Name: 0%s",
              hwid_bios_manufacturer, hwid_bios_serial, hwid_cpu_name, hwid_cpu_id,
              hwid_board_manufacturer, hwid_board_serial, hwid_uuid, hwid_diskModel,
-             hwid_totalMem, hwid_gpuName);
+             hwid_gpuName);
 
     //MessageBoxA(NULL, hwid_raw, "HWID", MB_OK);
     /*
@@ -283,6 +340,14 @@ char* hwid_generate2()
     DWORD dwType = REG_SZ;
     DWORD dwSize = sizeof(regHWID);
     hwid_changed = false;
+
+
+    // In version 1.4.4.3 we have changed the way HWID is generated, reset all HWID related values
+    // The previous version info is there also since 1.4.4.3, so for the previous version data will be empty
+    if (registry_version_changed && registry_previous_version[0] == '\0') {
+        hwid_restartRegistry();
+    }
+
 
     if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Activision\\Call of Duty 2", 0, KEY_READ | KEY_WRITE, &hKey) == ERROR_SUCCESS)
     {
@@ -441,28 +506,6 @@ char* hwid_generate2()
 }
 
 
-void hwid_clearRegistryFromHWIDChange() {
-    HKEY hKey;
-    if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Activision\\Call of Duty 2", 0, KEY_READ | KEY_WRITE, &hKey) == ERROR_SUCCESS)
-    {
-        // Clear the HWID change related values
-        RegDeleteValueA(hKey, "HWID_DIFF");
-        RegDeleteValueA(hKey, "HWID_OLD");
-
-        // Reset also memory
-        hwid_changed_diff[0] = '\0';
-        hwid_old[0] = '\0';
-
-        RegCloseKey(hKey);
-    }
-    else
-    {
-        SHOW_ERROR("Failed to open registry key for HWID.");
-        exit(1);
-    }
-}
-
-
 /**
  * Generates a unique REGID for the game, used for computer identification.
  * This REGID is used to verify if the HWID is unique accross multiple computers.
@@ -537,8 +580,8 @@ void hwid_init()
         }
     }
     
-    cl_hwid = Dvar_RegisterInt("cl_hwid", hwid_generate(), INT32_MIN, INT32_MAX, (dvarFlags_e)(DVAR_USERINFO | DVAR_NOWRITE));
-    cl_hwid2 = Dvar_RegisterString("cl_hwid2", hwid_generate2(), (dvarFlags_e)(DVAR_USERINFO | DVAR_NOWRITE));
+    cl_hwid = Dvar_RegisterInt("cl_hwid", hwid_generate_short(), INT32_MIN, INT32_MAX, (dvarFlags_e)(DVAR_USERINFO | DVAR_NOWRITE));
+    cl_hwid2 = Dvar_RegisterString("cl_hwid2", hwid_generate_long(), (dvarFlags_e)(DVAR_USERINFO | DVAR_NOWRITE));
 
     hwid_generate_regid();
 }
