@@ -74,6 +74,7 @@ void cgame_init() {
 void cgame_frame() {
 
     if (clientState != cgame_clientStateLast) {
+        logger_add("Client state changed from %d:%s to %d:%s", cgame_clientStateLast, get_client_state_name(cgame_clientStateLast), clientState, get_client_state_name(clientState));
         Com_DPrintf("Client state changed from %d:%s to %d:%s\n", cgame_clientStateLast, get_client_state_name(cgame_clientStateLast), clientState, get_client_state_name(clientState));
     }
 

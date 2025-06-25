@@ -63,6 +63,7 @@ DWORD WINAPI freeze_watchdogThreadProc(LPVOID lpParameter) {
 // Called when map is being loaded. In that time, COM_Frame is not called, so freeze heartbet is not being updated.
 // Heartbeat is updated here to prevent the watchdog thread from thinking the game is frozen.
 void Sys_LoadingKeepAlive() {
+    logger_add("Sys_LoadingKeepAlive called");
 
     // Update the last heartbeat
     freeze_lastHeartbeat = GetTickCount();

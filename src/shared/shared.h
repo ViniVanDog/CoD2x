@@ -78,6 +78,7 @@
 #include "version.h"
 #include "patch.h"
 #include "assembly.h"
+#include "logger.h"
 
 void escape_string(char* buffer, size_t bufferSize, const void* data, size_t length);
 uint16_t crc16_ccitt(const uint8_t* data, size_t length);

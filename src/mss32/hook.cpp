@@ -48,6 +48,8 @@ void hook_CL_Frame()
  */
 void hook_Com_Frame() 
 {
+    logger_add("Com_Frame starting...");
+
     #if DEBUG
         // First frame from newly loaded DLL, we need to initialize
         if (hook_hotreload_init) {
@@ -81,6 +83,8 @@ void hook_Com_Frame()
 
     // Call the original function
     ASM_CALL(RETURN_VOID, 0x00434f70);
+
+    logger_add("Com_Frame finished.");
 }
 
 
@@ -89,6 +93,8 @@ void hook_Com_Frame()
  * Is called only is dedicated = 0
  */
 int hook_gfxDll() {
+    logger_add("Loading gfx_d3d_mp_x86_s.dll...");
+
     // Call the original function
 	int ret = ((int ( *)())0x00464e80)();
 
@@ -105,6 +111,8 @@ int hook_gfxDll() {
 
     window_hook_rendered();
     updater_renderer();
+
+    logger_add("File gfx_d3d_mp_x86_s.dll loaded successfully.");
 
     return ret;
 }
@@ -127,6 +135,7 @@ int hook_gfxDll() {
  *    - init renderer (loads gfx_d3d_mp_x86_s.dll)
  */
 void hook_CL_Init() {
+    logger_add("CL_Init starting...");
     
     #if DEBUG
     hotreload_init();
@@ -143,6 +152,8 @@ void hook_CL_Init() {
     if (!DLL_HOTRELOAD) {
         ASM_CALL(RETURN_VOID, 0x00410a10);
     }
+
+    logger_add("CL_Init finished.");
 }
 
 
@@ -155,6 +166,7 @@ void hook_CL_Init() {
  *  - Network is not initialized yet!
  */
 void hook_SV_Init() {
+    logger_add("SV_Init starting...");
 
     // Shared & Server
     freeze_init();
@@ -167,6 +179,8 @@ void hook_SV_Init() {
     if (!DLL_HOTRELOAD) {
         ASM_CALL(RETURN_VOID, 0x004596d0);
     }
+
+    logger_add("SV_Init finished.");
 }
 
 
@@ -175,6 +189,7 @@ void hook_SV_Init() {
  * Is called in main function when the game is started. Is called only once on game start.
  */
 void hook_Com_Init(const char* cmdline) {
+    logger_add("Com_Init starting...");
 
     Com_Printf("Command line: '%s'\n", cmdline);
 
@@ -191,6 +206,8 @@ void hook_Com_Init(const char* cmdline) {
 
     affinity_init();
     common_printInfo();
+
+    logger_add("Com_Init finished.");
 }
 
 
@@ -198,6 +215,9 @@ void hook_Com_Init(const char* cmdline) {
  * Patch the CoD2MP_s.exe executable
  */
 bool hook_patch() {
+    logger_init();
+    logger_add("Patching CoD2MP_s.exe...");
+
     hModule = GetModuleHandle(NULL);
     if (hModule == NULL) {
         SHOW_ERROR("Failed to get module handle of current process.");
@@ -276,6 +296,8 @@ bool hook_patch() {
         // Watch for mss32.dll change
         hotreload_watch_dll();
     #endif
+
+    logger_add("Patched CoD2MP_s.exe successfully.");
 
     return TRUE;
 }

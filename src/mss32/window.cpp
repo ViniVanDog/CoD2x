@@ -363,8 +363,12 @@ LRESULT CALLBACK CoD2WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             if (bActivated && bMinimized == 0) {
                 win_isActivated = 1;              
                 ((void (*)())0x0042c600)(); // Com_TouchMemory();
+
+                logger_add("Window activated");
             } else {
                 win_isActivated = 0;
+
+                logger_add("Window deactivated / minimized");
             }
 
             mouse_windowIsActive = win_isActivated;
