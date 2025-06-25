@@ -127,6 +127,18 @@ void patch_int32(unsigned int targetAddress, int32_t value) {
 }
 
 /**
+ * Modifies the memory at a given address to insert a 32-bit float value.
+ *
+ * Example:
+ *  patch_float(0x400000, 3.14f);
+ *  0x400000:  00 00 00 00         // before
+ *  0x400000:  c3 f5 48 40         // after (float 3.14)
+ */
+void patch_float(unsigned int targetAddress, float value) {
+    patch_memory(targetAddress, &value, sizeof(float), PATCH_ACTION_INT32);
+}
+
+/**
  * Modifies the memory at a given address to insert an address of string pointer.
  * 
  * Example:
