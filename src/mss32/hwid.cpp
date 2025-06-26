@@ -42,7 +42,8 @@ char hwid_cpu_id[128] = {};
 char hwid_board_manufacturer[128] = {};
 char hwid_board_serial[128] = {};
 char hwid_uuid[128] = {};
-char hwid_diskModel[128] = {};
+char hwid_disk_model[128] = {};
+char hwid_disk_serial[128] = {};
 char hwid_gpuName[128] = {};
 
 extern bool registry_version_changed; // Flag to indicate if the version has changed
@@ -115,6 +116,110 @@ static HRESULT hwid_readWMIString(IWbemServices* pServices, const wchar_t* wmiCl
     return hr;
 }
 
+
+
+// Retrieves the physical drive number for the volume containing the Windows directory
+BOOL hwid_getSystemDrivePhysicalNumber(DWORD *outDriveNumber, char *errorBuffer, size_t errorBufferSize) {
+    // Get the Windows directory path, e.g., "C:\Windows"
+    char windowsPath[MAX_PATH] = {0};
+    if (!GetWindowsDirectoryA(windowsPath, MAX_PATH)) {
+        snprintf(errorBuffer, errorBufferSize, "GetWindowsDirectoryA failed (err=%lu)", GetLastError());
+        return FALSE;
+    }
+
+    // Open volume handle, e.g., "\\.\C:"
+    char volPath[8] = {0};
+    sprintf_s(volPath, sizeof(volPath), "\\\\.\\%c:", windowsPath[0]);
+    HANDLE hVol = CreateFileA(volPath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+    if (hVol == INVALID_HANDLE_VALUE) {
+        snprintf(errorBuffer, errorBufferSize, "CreateFileA('%s') failed (err=%lu)", volPath, GetLastError());
+        return FALSE;
+    }
+
+    // Query the volume disk extents to get the physical drive number, e.g., "PhysicalDrive0"
+    VOLUME_DISK_EXTENTS extents;
+    ZeroMemory(&extents, sizeof(extents));
+    DWORD bytesReturned = 0;
+    BOOL ok = DeviceIoControl(hVol, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, NULL, 0, &extents, sizeof(extents), &bytesReturned, NULL);
+    CloseHandle(hVol);
+    if (!ok) {
+        snprintf(errorBuffer, errorBufferSize, "DeviceIoControl(IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS) failed (err=%lu)", GetLastError());
+        return FALSE;
+    }
+    if (extents.NumberOfDiskExtents < 1) {
+        snprintf(errorBuffer, errorBufferSize, "DeviceIoControl(IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS) returned no disk extents");
+        return FALSE;
+    }
+    *outDriveNumber = extents.Extents[0].DiskNumber;
+
+    return TRUE;
+}
+
+
+// Reads the serial number of "PhysicalDriveN"
+BOOL hwid_getDiskSerial(
+    DWORD driveNumber, 
+    char *outSerial, size_t outSerialSize, 
+    char *outProductId, size_t outProductIdSize, 
+    char *errorBuffer, size_t errorBufferSize) 
+{
+    // Open the physical drive handle, e.g., "\\.\PhysicalDrive0"
+    char devicePath[64];
+    sprintf_s(devicePath, sizeof(devicePath), "\\\\.\\PhysicalDrive%u", driveNumber);
+    HANDLE h = CreateFileA(devicePath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (h == INVALID_HANDLE_VALUE) {
+        sprintf_s(errorBuffer, errorBufferSize, "CreateFileA('%s') failed (err=%lu)", devicePath, GetLastError());
+        return FALSE;
+    }
+
+    // Query the storage device properties to get the device data
+    STORAGE_PROPERTY_QUERY query;
+    ZeroMemory(&query, sizeof(query));
+    BYTE buffer[1024] = {0};
+    DWORD bytesReturned = 0;
+    BOOL success = DeviceIoControl(h, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), buffer, sizeof(buffer), &bytesReturned, NULL);
+    CloseHandle(h);
+    if (!success) {
+        sprintf_s(errorBuffer, errorBufferSize, "DeviceIoControl(IOCTL_STORAGE_QUERY_PROPERTY) failed (err=%lu)", GetLastError());
+        return FALSE;
+    }
+    if (bytesReturned < sizeof(STORAGE_DEVICE_DESCRIPTOR)) {
+        sprintf_s(errorBuffer, errorBufferSize, "DeviceIoControl returned too few bytes (%lu)", bytesReturned);
+        return FALSE;
+    }
+    STORAGE_DEVICE_DESCRIPTOR *desc = (STORAGE_DEVICE_DESCRIPTOR *)buffer;
+
+    // Check for serial number
+    ULONG serialNumberOffset = desc->SerialNumberOffset;
+    if (serialNumberOffset == 0 || serialNumberOffset >= bytesReturned) {
+        sprintf_s(errorBuffer, errorBufferSize, "No serial number offset in descriptor");
+        return FALSE;
+    }
+
+    // Check for product id
+    ULONG productIdOffset = desc->ProductIdOffset;
+    if (productIdOffset == 0 || productIdOffset >= bytesReturned) {
+        sprintf_s(errorBuffer, errorBufferSize, "No product ID offset in descriptor");
+        return FALSE;
+    }
+
+    // Copy serial string
+    if (strncpy_s(outSerial, outSerialSize, (char *)buffer + serialNumberOffset, _TRUNCATE) != 0) {
+        sprintf_s(errorBuffer, errorBufferSize, "Failed to copy serial string");
+        return FALSE;
+    }
+
+    // Copy product ID
+    if (strncpy_s(outProductId, outProductIdSize, (char *)buffer + productIdOffset, _TRUNCATE) != 0) {
+        sprintf_s(errorBuffer, errorBufferSize, "Failed to copy product ID");
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+
+
 /**
  * Loads all required WMI properties into shared global variables.
  */
@@ -123,10 +228,10 @@ HRESULT hwid_loadProperties(char* errorBuffer, size_t errorBufferSize)
     HRESULT hr;
     IWbemLocator *pLocator = NULL;
     IWbemServices *pServices = NULL;
-    
+    DWORD driveNumber = 0;
+
     // Buffer to store names of missing properties
     char missingProps[512] = {0};
-    size_t missingLen = 0;
     int emptyCount = 0;
 
     // Read all required WMI properties
@@ -138,8 +243,7 @@ HRESULT hwid_loadProperties(char* errorBuffer, size_t errorBufferSize)
         {L"Win32_Processor", L"ProcessorId", hwid_cpu_id, sizeof(hwid_cpu_id)},
         {L"Win32_BaseBoard", L"Manufacturer", hwid_board_manufacturer, sizeof(hwid_board_manufacturer)},
         {L"Win32_BaseBoard", L"SerialNumber", hwid_board_serial, sizeof(hwid_board_serial)},
-        {L"Win32_ComputerSystemProduct", L"UUID", hwid_uuid, sizeof(hwid_uuid)},
-        {L"Win32_DiskDrive", L"Model", hwid_diskModel, sizeof(hwid_diskModel)},
+        {L"Win32_ComputerSystemProduct", L"UUID", hwid_uuid, sizeof(hwid_uuid)}, // TODO
         {L"Win32_VideoController", L"Name", hwid_gpuName, sizeof(hwid_gpuName)}
     };
 
@@ -170,18 +274,36 @@ HRESULT hwid_loadProperties(char* errorBuffer, size_t errorBufferSize)
         HRESULT propHr = hwid_readWMIString(pServices, properties[i].wmiClass, properties[i].property, properties[i].buffer, properties[i].bufferSize);
         if (FAILED(propHr)) {
             hr = propHr;
-            snprintf(errorBuffer, errorBufferSize, "Failed to read WMI property '%ls.%ls'", properties[i].wmiClass, properties[i].property);
+            sprintf_s(errorBuffer, errorBufferSize, "Failed to read WMI property '%ls.%ls'", properties[i].wmiClass, properties[i].property);
             goto cleanup;
         }
         if (properties[i].buffer[0] == '\0') {
             emptyCount++;
             // Append missing property name to missingProps
-            int written = snprintf(missingProps + missingLen, sizeof(missingProps) - missingLen,
-                                   "%ls.%ls ", properties[i].wmiClass, properties[i].property);
-            if (written > 0 && (missingLen + (size_t)written < sizeof(missingProps)))
-                missingLen += (size_t)written;
+            char propertyName[128];
+            sprintf_s(propertyName, sizeof(propertyName), "%ls.%ls ", properties[i].wmiClass, properties[i].property);
+            strncat(missingProps, propertyName, sizeof(missingProps) - strlen(missingProps) - 1);
         }
     }
+
+    // Read disk model and serial
+    if (!hwid_getSystemDrivePhysicalNumber(&driveNumber, errorBuffer, errorBufferSize)) {
+        hr = E_FAIL;
+        goto cleanup;
+    }
+    if (!hwid_getDiskSerial(driveNumber, hwid_disk_serial, sizeof(hwid_disk_serial), hwid_disk_model, sizeof(hwid_disk_model), errorBuffer, errorBufferSize)) {
+        hr = E_FAIL;
+        goto cleanup;
+    }
+    if (hwid_disk_model[0] == '\0') {
+        emptyCount++;
+        strncat(missingProps, "Disc Model ", sizeof(missingProps) - strlen(missingProps) - 1);
+    }
+    if (hwid_disk_serial[0] == '\0') {
+        emptyCount++;
+        strncat(missingProps, "Disc Serial Number ", sizeof(missingProps) - strlen(missingProps) - 1);
+    }
+
     if (emptyCount >= 3) {
         hr = E_FAIL;
         snprintf(errorBuffer, errorBufferSize, "Too many missing WMI properties (%d/%d). Missing: %s",
@@ -298,7 +420,7 @@ void hwid_clearRegistryFromHWIDChange() {
 }
 
 
-/**
+ /**
  * Generates a unique Hardware ID (HWID) based on the system's hardware components
  *
  * @return A pointer to the generated HWID string.
@@ -307,11 +429,9 @@ char* hwid_generate_long()
 {
     char hwid_raw[1024];
     snprintf(hwid_raw, sizeof(hwid_raw),
-             "BIOS manufacturer: %s\nBIOS serial: %s\nCPU name: %s\nCPU ID: %s\nMotherboard manufacturer: %s\nMotherboard serial: %s\nUUID: %s\nDisk Model: %s\nGPU Name: %s",
-             //"BIOS manufacturer: eyza-%s\nBIOS serial: %s\nCPU name: %s\nCPU ID: %s\nMotherboard manufacturer: %s\nMotherboard serial: %s\nUUID: %s\nDisk Model: %s\nGPU Name: %s",
-             //"BIOS manufacturer: 0%s\nBIOS serial: 0%s\nCPU name: 0%s\nCPU ID: 0%s\nMotherboard manufacturer: 0%s\nMotherboard serial: 0%s\nUUID: 0%s\nDisk Model: 0%s\nGPU Name: 0%s",
+             "BIOS manufacturer: %s\nBIOS serial: %s\nCPU name: %s\nCPU ID: %s\nMotherboard manufacturer: %s\nMotherboard serial: %s\nDisk Model: %s\nDisk Serial: %s\nGPU Name: %s",
              hwid_bios_manufacturer, hwid_bios_serial, hwid_cpu_name, hwid_cpu_id,
-             hwid_board_manufacturer, hwid_board_serial, hwid_uuid, hwid_diskModel,
+             hwid_board_manufacturer, hwid_board_serial, hwid_disk_model, hwid_disk_serial,
              hwid_gpuName);
 
     //MessageBoxA(NULL, hwid_raw, "HWID", MB_OK);
