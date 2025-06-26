@@ -113,6 +113,13 @@ int hook_gfxDll() {
     window_hook_rendered();
     updater_renderer();
 
+    // Fix LOD
+    //r_lodScale = Dvar_RegisterFloat("r_lodScale", 1f, 1f, 4f, DVAR_CHEAT | DVAR_RENDERER);
+    patch_float(gfx_module_addr + 0x000acb4 + 1, 1.0f); // r_lodScale default value,    originally 1.0f
+    patch_float(gfx_module_addr + 0x000acaf + 1, 0.0f); // r_lodScale min value,        originally 1.0f
+    patch_float(gfx_module_addr + 0x000acaa + 1, 1.0f); // r_lodScale max value,        originally 4.0f
+    patch_int32(gfx_module_addr + 0x000aca5 + 1, (DVAR_ARCHIVE | DVAR_RENDERER)); // r_lodScale flags, originally DVAR_CHEAT | DVAR_RENDERER
+
     logger_add("File gfx_d3d_mp_x86_s.dll loaded successfully.");
 
     return ret;
