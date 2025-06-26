@@ -275,4 +275,8 @@ void cgame_patch() {
 
     // Cvar cl_maxpackets max value change from 100 to 125
     patch_int32(0x00410c64 + 1, 125); // 00410c64  bb64000000         mov     ebx, 100
+
+
+    // Make "RECORDING %s" message smaller
+    patch_float(0x004147e0 + 1, 0.2f); // 004147e0  68abaaaa3e push    0.333333343
 }
