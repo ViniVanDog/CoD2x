@@ -11,6 +11,7 @@ bool registry_version_changed = false;
 // Buffer to store the previous version
 // If the buffer is empty, it means this is the first run of CoD2x or the version before 1.4.4.2 or lower (version change was introduced in 1.4.4.3)
 char registry_previous_version[64] = {0}; 
+bool registry_version_downgrade = false; // Flag to indicate if the version has been downgraded
 
 
 bool registry_check() {
@@ -38,6 +39,24 @@ bool registry_check() {
         // Value exists, check if it matches the current version
         if (strcmp(regVersion, APP_VERSION) != 0) {
             registry_version_changed = true;
+
+            // If the version has changed, check if it is a downgrade
+            if (regVersion[0] != '\0') {
+                // Version in registry is higher than the current version
+                if (version_compare(regVersion, APP_VERSION) > 0) {
+                    registry_version_downgrade = true; // Version has been downgraded
+
+                    char msg[512];
+                    snprintf(msg, sizeof(msg),
+                        "The CoD2x has been downgraded from a newer version.\n\n"
+                        "Current version: %s\n"
+                        "Previous version: %s\n\n"
+                        "This may cause issues with the game. Please ensure you are using the correct version.\n\n"
+                        "If you are having issues with the newer version, please contact the developers.",
+                        APP_VERSION, regVersion);
+                    MessageBoxA(NULL, msg, "Version downgrade", MB_OK | MB_ICONWARNING | MB_TOPMOST);
+                }
+            }
         }
         // Save the previous version for comparison
         strncpy(registry_previous_version, regVersion, sizeof(registry_previous_version) - 1);

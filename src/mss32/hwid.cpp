@@ -47,6 +47,7 @@ char hwid_disk_serial[128] = {};
 char hwid_gpuName[128] = {};
 
 extern bool registry_version_changed; // Flag to indicate if the version has changed
+extern bool registry_version_downgrade; // Flag to indicate if the version has been downgraded
 extern char registry_previous_version[64]; // Buffer to store the previous version
 
 struct WMIProperty {
@@ -464,7 +465,8 @@ char* hwid_generate_long()
 
     // In version 1.4.4.3 we have changed the way HWID is generated, reset all HWID related values
     // The previous version info is there also since 1.4.4.3, so for the previous version data will be empty
-    if (registry_version_changed && registry_previous_version[0] == '\0') {
+    bool isDowngradeTo1_4_4_3 = registry_version_downgrade && strcmp(APP_VERSION, "1.4.4.3") == 0;
+    if (registry_version_changed && (registry_previous_version[0] == '\0' || isDowngradeTo1_4_4_3)) {
         hwid_restartRegistry();
     }
 

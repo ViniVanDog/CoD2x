@@ -1,6 +1,113 @@
 #include "shared.h"
 
 #include <cstdio>
+#include <cctype>
+
+/*
+ * Compares two version strings.
+ * Versions are expected in the format: "1.4.4.2" or "1.4.4.2-test.1".
+ *
+ * Returns:
+ *   <0 if ver1 is lower than ver2,
+ *    0 if they are equal,
+ *   >0 if ver1 is greater than ver2.
+ *
+ * A version without a pre-release part is considered higher (more stable)
+ * than one with a pre-release part if the main parts are identical.
+ */
+int version_compare(const char *v1, const char *v2) {
+    if (v1 == v2) return 0;
+    if (!v1) return -1;
+    if (!v2) return 1;
+
+    const char *p1 = v1, *p2 = v2;
+
+    // Step 1: compare numeric core (e.g. 1.2.3.4)
+    while (1) {
+        int end1 = (*p1 == '-' || *p1 == '\0');
+        int end2 = (*p2 == '-' || *p2 == '\0');
+
+        if (end1 && end2) break;
+
+        uint64_t n1 = 0, n2 = 0;
+
+        if (!end1) {
+            char *q;
+            n1 = strtoull(p1, &q, 10);
+            p1 = (*q == '.') ? q + 1 : q;
+        }
+
+        if (!end2) {
+            char *q;
+            n2 = strtoull(p2, &q, 10);
+            p2 = (*q == '.') ? q + 1 : q;
+        }
+
+        if (n1 < n2) return -1;
+        if (n1 > n2) return 1;
+    }
+
+    // Step 2: handle pre-release presence
+    // "1.2.3.4" > "1.2.3.4-alpha"
+    const char *pre1 = (*p1 == '-') ? p1 + 1 : NULL;
+    const char *pre2 = (*p2 == '-') ? p2 + 1 : NULL;
+
+    if (!pre1 && !pre2) return 0;
+    if (!pre1) return 1;
+    if (!pre2) return -1;
+
+    // Step 3: compare pre-release tokens (e.g. "alpha", "test.2", etc.)
+    const char *t1 = pre1, *t2 = pre2;
+
+    while (1) {
+        const char *e1 = t1; while (*e1 && *e1 != '.') ++e1;
+        const char *e2 = t2; while (*e2 && *e2 != '.') ++e2;
+        size_t len1 = (size_t)(e1 - t1);
+        size_t len2 = (size_t)(e2 - t2);
+
+        int num1 = len1 && strspn(t1, "0123456789") == len1;
+        int num2 = len2 && strspn(t2, "0123456789") == len2;
+        int result = 0;
+
+        if (num1 && num2) {
+            // Compare numerically: "test.2" < "test.10"
+            char buf1[32] = {0}, buf2[32] = {0};
+            if (len1 < sizeof(buf1) && len2 < sizeof(buf2)) {
+                memcpy(buf1, t1, len1);
+                memcpy(buf2, t2, len2);
+                uint64_t v1n = strtoull(buf1, NULL, 10);
+                uint64_t v2n = strtoull(buf2, NULL, 10);
+                result = (v1n < v2n) ? -1 : (v1n > v2n);
+            } else {
+                result = (len1 < len2) ? -1 : (len1 > len2);
+            }
+        } else if (num1 != num2) {
+            // Numeric tokens are always lower than alphanumeric
+            result = num1 ? -1 : 1;
+        } else {
+            // Compare alphanumerics case-insensitively: "alpha" vs "beta"
+            size_t n = (len1 < len2) ? len1 : len2;
+            for (size_t i = 0; i < n && !result; ++i) {
+                unsigned char c1 = (unsigned char)tolower((unsigned char)t1[i]);
+                unsigned char c2 = (unsigned char)tolower((unsigned char)t2[i]);
+                if (c1 != c2) result = (c1 < c2) ? -1 : 1;
+            }
+            if (!result && len1 != len2) {
+                result = (len1 < len2) ? -1 : 1;
+            }
+        }
+
+        if (result) return result;
+
+        // Advance to next token
+        t1 = (*e1 == '.') ? e1 + 1 : e1;
+        t2 = (*e2 == '.') ? e2 + 1 : e2;
+
+        if (!*t1 && !*t2) return 0;
+        if (!*t1) return -1;
+        if (!*t2) return 1;
+    }
+}
 
 void escape_string(char* buffer, size_t bufferSize, const void* data, size_t length) {
     // Loop through the data char by char and escape invisible characters into buffer
