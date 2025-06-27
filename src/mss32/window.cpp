@@ -59,6 +59,7 @@ static HDC gamma_currentDC = NULL;
 static char gamma_currentDeviceName[32] = "";
 static WORD gamma_originalRamp[3][256] = { 0 };
 static bool gamma_modified = false;
+static bool gamma_warningShowed = false;
 static float gamma_previous = 1.0f; // Previous gamma value to detect changes
 
 
@@ -166,6 +167,9 @@ bool gamma_update()
         gamma_createRamp(gamma, newRamp);
         if (!SetDeviceGammaRamp(gamma_currentDC, newRamp))
         {
+            if (!gamma_warningShowed)
+                MessageBoxA(NULL, "Failed to apply gamma for the monitor.", "Gamma Warning", MB_ICONWARNING | MB_OK);
+            gamma_warningShowed = true;
             gamma_restore();
             return false;
         }
