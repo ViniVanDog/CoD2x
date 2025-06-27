@@ -5,6 +5,7 @@
 #include <dbghelp.h>
 
 #include "shared.h"
+#include "window.h"
 #include "error.h"
 
 
@@ -87,6 +88,9 @@ LONG WINAPI exception_handler(EXCEPTION_POINTERS* pExceptionInfo) {
 
     // In case of crash stop the watchdog thread
     exception_processCrashed++;
+
+
+    gamma_restore();
 
 
     char moduleName[MAX_PATH] = {0};

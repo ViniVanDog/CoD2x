@@ -126,7 +126,7 @@ WIN_AS = nasm
 WIN_CFLAGS = $(CFLAGS) $(DEBUG_FLAG) $(DEVELOPER_FLAG) -mwindows -static
 WIN_LFLAGS = -shared -m32
 WIN_ASFLAGS = -f win32	# Output format for NASM (32-bit Windows)
-WIN_LIBS = -lkernel32 -lwininet -static-libgcc -static-libstdc++ -lstdc++ -ldbghelp -lole32 -loleaut32 -luuid
+WIN_LIBS = -lkernel32 -lwininet -static-libgcc -static-libstdc++ -lstdc++ -ldbghelp -lole32 -loleaut32 -luuid -lgdi32
 # -mwindows: Link with the Windows GUI subsystem (no console)
 # -static: Link libraries statically
 
