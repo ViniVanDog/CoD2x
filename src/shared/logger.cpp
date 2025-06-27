@@ -4,14 +4,22 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdarg.h>
-#include <windows.h> // For CRITICAL_SECTION
+#if _WIN32 == 1
+  #include <windows.h> // For CRITICAL_SECTION
+#else
+  #include <pthread.h>
+#endif
 
 static struct {
     size_t head;      // next write index
     size_t count;     // number of valid entries (≤ LOG_CAPACITY)
     time_t timestamps[LOG_CAPACITY];
     char   messages[LOG_CAPACITY][LOG_MSG_LEN + 1];
-    CRITICAL_SECTION cs;
+    #if _WIN32 == 1
+        CRITICAL_SECTION cs;
+    #else
+        pthread_mutex_t cs;
+    #endif
 } lg;
 
 void logger_add(const char *fmt, ...) {
@@ -23,7 +31,11 @@ void logger_add(const char *fmt, ...) {
 
     time_t now = time(NULL);
 
-    EnterCriticalSection(&lg.cs);
+    #if _WIN32 == 1
+        EnterCriticalSection(&lg.cs);
+    #else
+        pthread_mutex_lock(&lg.cs);
+    #endif
 
     lg.timestamps[lg.head] = now;
     strncpy(lg.messages[lg.head], message, LOG_MSG_LEN);
@@ -31,7 +43,11 @@ void logger_add(const char *fmt, ...) {
     lg.head = (lg.head + 1) % LOG_CAPACITY;
     if (lg.count < LOG_CAPACITY) lg.count++;
 
-    LeaveCriticalSection(&lg.cs);
+    #if _WIN32 == 1
+        LeaveCriticalSection(&lg.cs);
+    #else
+        pthread_mutex_unlock(&lg.cs);
+    #endif
 }
 
 size_t logger_get_recent(char *buffer, size_t max_chars) {
@@ -39,10 +55,18 @@ size_t logger_get_recent(char *buffer, size_t max_chars) {
     size_t written = 0;
     buffer[0] = '\0';
 
-    EnterCriticalSection(&lg.cs);
+    #if _WIN32 == 1
+        EnterCriticalSection(&lg.cs);
+    #else
+        pthread_mutex_lock(&lg.cs);
+    #endif
 
     if (lg.count == 0) {
-        LeaveCriticalSection(&lg.cs);
+        #if _WIN32 == 1
+                LeaveCriticalSection(&lg.cs);
+        #else
+                pthread_mutex_unlock(&lg.cs);
+        #endif
         return 0;
     }
 
@@ -67,7 +91,11 @@ size_t logger_get_recent(char *buffer, size_t max_chars) {
         idx = (idx - 1 + LOG_CAPACITY) % LOG_CAPACITY;
     }
 
-    LeaveCriticalSection(&lg.cs);
+    #if _WIN32 == 1
+        LeaveCriticalSection(&lg.cs);
+    #else
+        pthread_mutex_unlock(&lg.cs);
+    #endif
 
     return written;
 }
@@ -75,9 +103,17 @@ size_t logger_get_recent(char *buffer, size_t max_chars) {
 void logger_init(void) {
     lg.head  = 0;
     lg.count = 0;
-    InitializeCriticalSection(&lg.cs);
+    #if _WIN32 == 1
+        InitializeCriticalSection(&lg.cs);
+    #else
+        pthread_mutex_init(&lg.cs, NULL);
+    #endif
 }
 
 void logger_destroy(void) {
-    DeleteCriticalSection(&lg.cs);
+    #if _WIN32 == 1
+        DeleteCriticalSection(&lg.cs);
+    #else
+        pthread_mutex_destroy(&lg.cs);
+    #endif
 }
