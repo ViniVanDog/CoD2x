@@ -58,7 +58,9 @@ It focuses on fixing bugs and adding new features to the game.
   - "==== ShutdownGame ===="
   - "gamename: Call of Duty 2"
   - "gamedate: Jun 23 2006"
-
+- Smaller font size of text
+  - When downloading IWD file
+  - Text "RECORDING" in the left bottom corner when recording demo
 
 #### Improvements
 - Added windowed and borderless window mode:
@@ -116,6 +118,11 @@ It focuses on fixing bugs and adding new features to the game.
   - `com_affinity 0` - disable automatically setting CPU affinity
   - `com_affinity <number>` - set specified number of cores (e.g. `com_affinity 3` will use first 3 cores)
 - Fixed sounds of invisible players caused by PVS
+- Changeable LODs (Level of Detail) for models
+  - `r_lodScale <value>`
+    - `r_lodScale 1` (default) - original LODs
+    - `r_lodScale 0.5` - better model detail in distance
+    - `r_lodScale 0` - best model detail in distance
 
 # How to install (client on Windows)
 1. You need original Call of Duty 2 with version [1.3](https://www.moddb.com/games/call-of-duty-2/downloads/call-of-duty-2-pc-patch-v-13) installed.

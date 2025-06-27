@@ -29,7 +29,7 @@ VERSION_PROTOCOL = 4
 
 # CoD2x patch version
 # Should be increased when new version is released and the changes are backward compatible
-VERSION_PATCH = 2
+VERSION_PATCH = 3
 
 # CoD2x test version
 # Should be increased when new version is released and the changes are backward compatible
