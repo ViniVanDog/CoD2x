@@ -5,6 +5,7 @@
 
 #include "shared.h"
 #include "hwid.h"
+#include "system.h"
 #include "../shared/cod2_dvars.h"
 #include "../shared/cod2_client.h"
 #include "../shared/cod2_net.h"
@@ -252,8 +253,8 @@ bool updater_sendRequest() {
         }
 
         char data[2048] = {0};
-        snprintf(data, sizeof(data), "\"%s\" \"%s\" \"%i\" \"%s\" \"%s\" \"%i\" \"%s\"",
-            CDKeyHash, hwid_regid, hwid, hwid2, hwid_old, hwid_changed_count, hwid_changed_diff_escaped);
+        snprintf(data, sizeof(data), "\"%s\" \"%s\" \"%i\" \"%s\" \"%s\" \"%i\" \"%s\" \"%s\"",
+            CDKeyHash, hwid_regid, hwid, hwid2, hwid_old, hwid_changed_count, hwid_changed_diff_escaped, SYS_VERSION_INFO);
 
         // Base64 encode the data
         char encodedData[2800] = {0};

@@ -9,6 +9,7 @@
 #include "../shared/cod2_net.h"
 #include "../shared/cod2_dvars.h"
 #include "updater.h"
+#include "system.h"
 
 extern struct netaddr_s updater_address;
 extern dvar_t *cl_hwid;
@@ -40,9 +41,9 @@ void error_sendCrashData(unsigned int exceptionCode, unsigned int exceptionAddre
         char udpPayload[2048];
         snprintf(
             udpPayload, sizeof(udpPayload),
-            //logCrashData    "1.0.0"          "win-x86" "{HWID2}" "{REGID}" "{CODE}" "{ADDRESS}" "{MODULE_NAME}" "{MODULE_OFFSET}" "{STACK_DUMP}" "{LOG}"
-            "logCrashData \"" APP_VERSION "\" \"win-x86\" \"%s\" \"%s\" \"0x%08x\" \"0x%08x\" \"%s\" \"0x%08x\" \"%s\" \"%s\"\n",
-            hwid2, regid, exceptionCode, exceptionAddress, moduleName, fileOffset, stackDump, log
+            //logCrashData    "1.0.0"          "win-x86" "{HWID2}" "{REGID}" "{CODE}" "{ADDRESS}" "{MODULE_NAME}" "{MODULE_OFFSET}" "{STACK_DUMP}" "{LOG}" "{SYSTEM_INFO}"
+            "logCrashData \"" APP_VERSION "\" \"win-x86\" \"%s\" \"%s\" \"0x%08x\" \"0x%08x\" \"%s\" \"0x%08x\" \"%s\" \"%s\" \"%s\"\n",
+            hwid2, regid, exceptionCode, exceptionAddress, moduleName, fileOffset, stackDump, log, SYS_VERSION_INFO
         );
         NET_OutOfBandPrint(NS_CLIENT, updater_address, udpPayload);
     }
@@ -76,9 +77,9 @@ void error_sendErrorData(const char* message) {
 
         char udpPayload[2048];
         snprintf(udpPayload, sizeof(udpPayload), 
-            // errorData      "1.4.4.3"        "win-x86"  "{HWID2}" "{REGID}" "{ERROR}" "{LOG}"
-            "logErrorData \"" APP_VERSION "\" \"win-x86\" \"%s\" \"%s\" \"%s\" \"%s\"\n",
-            hwid2, regid, message, log);
+            // errorData      "1.4.4.3"        "win-x86"  "{HWID2}" "{REGID}" "{ERROR}" "{LOG}" "{SYSTEM_INFO}"
+            "logErrorData \"" APP_VERSION "\" \"win-x86\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"\n",
+            hwid2, regid, message, log, SYS_VERSION_INFO);
 
         //MessageBoxA(NULL, udpPayload, "Error Data", MB_ICONERROR | MB_OK | MB_TOPMOST);
         

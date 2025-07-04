@@ -138,6 +138,13 @@ bool system_isVirtualMachineBios() {
     return false;
 }
 
+void system_getCountryCode(char *buffer, int bufferSize) {
+    if (!GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, buffer, bufferSize)) {
+        snprintf(buffer, bufferSize, "??");
+    }
+}
+
+
 void system_getInfo() {
     // Get Windows version info
     system_getWindowsVersionInfoFromRegistry();
@@ -145,7 +152,12 @@ void system_getInfo() {
     // Get Wine version if running under Wine
     bool isWine = system_getWineVersion();
 
+    // Get virtualization info
     bool isVM = system_isVirtualMachineBios();
+
+    // Get country code
+    char countryCode[8] = {0};
+    system_getCountryCode(countryCode, sizeof(countryCode)); 
 
     char virtualization[512];
     if (isWine) {
@@ -157,8 +169,8 @@ void system_getInfo() {
     }
 
     // Compose final version info string
-    // Format: "win-x86-<build>-<edition>-<displayVersion>-<virtualization>"
-    snprintf(SYS_VERSION_INFO, sizeof(SYS_VERSION_INFO), "win-x86-%s-%s-%s-%s", SYS_WIN_BUILD, SYS_WIN_EDITION, SYS_WIN_DISPLAY_VERSION, virtualization);
+    // Format: "<build>-<edition>-<displayVersion>-<country>-<virtualization>"
+    snprintf(SYS_VERSION_INFO, sizeof(SYS_VERSION_INFO), "%s\n%s\n%s\n%s\n%s", SYS_WIN_BUILD, SYS_WIN_EDITION, SYS_WIN_DISPLAY_VERSION, countryCode, virtualization);
 
     //MessageBoxA(NULL, SYS_VERSION_INFO, "System Info", MB_OK | MB_ICONINFORMATION);
 }
