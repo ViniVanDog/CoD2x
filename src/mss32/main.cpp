@@ -83,7 +83,9 @@ bool main_patchEntryPoint() {
     // Check if process is SinglePlayer, if it is, exit
     char processName[MAX_PATH];
     GetModuleFileNameA(EXE_HMODULE, processName, MAX_PATH);
-    if (strstr(processName, "CoD2SP_s.exe") != NULL) {
+    char* baseName = strrchr(processName, '\\');
+    baseName = baseName ? baseName + 1 : processName;
+    if (strnicmp(baseName, "CoD2SP_s", 8) == 0) {
         return TRUE;
     }
 
