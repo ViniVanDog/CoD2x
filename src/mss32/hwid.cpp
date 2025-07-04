@@ -515,10 +515,8 @@ char* hwid_generate_long()
     hwid_changed = false;
 
 
-    // In version 1.4.4.3 we have changed the way HWID is generated, reset all HWID related values
-    // The previous version info is there also since 1.4.4.3, so for the previous version data will be empty
-    bool isDowngradeTo1_4_4_3 = registry_version_downgrade && strcmp(APP_VERSION, "1.4.4.3") == 0;
-    if (registry_version_changed && (registry_previous_version[0] == '\0' || isDowngradeTo1_4_4_3)) {
+    // User has upgraded / downgraded to 1.4.4.4 - in this version we have restarted the HWID2 data
+    if (registry_version_changed && strcmp(APP_VERSION, "1.4.4.4") == 0) {
         hwid_restartRegistry();
     }
 
@@ -727,11 +725,13 @@ void hwid_frame()
     // Check if HWID has changed since last check
     if (hwid_changed) {
         hwid_changed = false;
-        Com_Error(ERR_DROP, 
+        
+        // The error is disabled untill its ready
+        /*Com_Error(ERR_DROP, 
             "Your hardware ID has changed.\n\n"
             "If you were banned, this new hardware ID will also be banned. "
             "If not, you may continue playing. "
-            "If this happens often, please contact developers of CoD2x.");
+            "If this happens often, please contact developers of CoD2x.");*/
     }
 }
 
