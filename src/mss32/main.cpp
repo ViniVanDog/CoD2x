@@ -6,6 +6,7 @@
 #include "hook.h"
 #include "admin.h"
 #include "registry.h"
+#include "system.h"
 #include "mss32_original.h"
 
 
@@ -19,7 +20,6 @@ char EXE_DIRECTORY_PATH[MAX_PATH] = {0};
 char DLL_PATH[MAX_PATH] = {0}; 
 bool DLL_HOTRELOAD = false; // set to true when the DLL was hot-reloaded in debug mode
 
-
 /**
  * Load the CoD2x patches
  */
@@ -32,6 +32,8 @@ bool main_load() {
             "You successfully installed CoD2x " APP_VERSION ".\n\n"
             "Note that this is a test version, we recommend you to uninstall it after trying it!", "CoD2x warning", MB_OK | MB_ICONINFORMATION);
     }
+
+    system_getInfo(); // Get system info (Windows version, Wine version, etc.)
 
     // Check if the user is an admin
     ok = admin_check();
