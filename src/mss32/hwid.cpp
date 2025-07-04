@@ -35,16 +35,17 @@ char hwid_old[33] = {};                  // Stores the previous HWID
 char hwid_regid[33] = {};                // Stores the registry ID
 
 // Global buffers to cache all WMI properties (shared by both generate functions)
-char hwid_bios_manufacturer[128] = {};
-char hwid_bios_serial[128] = {};
-char hwid_cpu_name[128] = {};
-char hwid_cpu_id[128] = {};
-char hwid_board_manufacturer[128] = {};
-char hwid_board_serial[128] = {};
-char hwid_uuid[128] = {};
-char hwid_disk_model[128] = {};
-char hwid_disk_serial[128] = {};
-char hwid_gpuName[128] = {};
+#define MAX_WMI_BUFFER_SIZE 128
+char hwid_bios_manufacturer[MAX_WMI_BUFFER_SIZE] = {};
+char hwid_bios_serial[MAX_WMI_BUFFER_SIZE] = {};
+char hwid_cpu_name[MAX_WMI_BUFFER_SIZE] = {};
+char hwid_cpu_id[MAX_WMI_BUFFER_SIZE] = {};
+char hwid_board_manufacturer[MAX_WMI_BUFFER_SIZE] = {};
+char hwid_board_serial[MAX_WMI_BUFFER_SIZE] = {};
+char hwid_uuid[MAX_WMI_BUFFER_SIZE] = {};
+char hwid_disk_model[MAX_WMI_BUFFER_SIZE] = {};
+char hwid_disk_serial[MAX_WMI_BUFFER_SIZE] = {};
+char hwid_gpuName[MAX_WMI_BUFFER_SIZE] = {};
 
 extern bool registry_version_changed; // Flag to indicate if the version has changed
 extern bool registry_version_downgrade; // Flag to indicate if the version has been downgraded
@@ -80,7 +81,7 @@ struct WMIProperty {
 /**
  * Helper to read a string property from a WMI query result
  */
-static HRESULT hwid_readWMIString(IWbemServices* pServices, const wchar_t* wmiClass, const wchar_t* prop, char* out, size_t outSize)
+static HRESULT hwid_WMI_readFirstString(IWbemServices* pServices, const wchar_t* wmiClass, const wchar_t* prop, char* out, size_t outSize)
 {
     IEnumWbemClassObject* pEnumerator = NULL;
     IWbemClassObject* pObj = NULL;
@@ -98,12 +99,18 @@ static HRESULT hwid_readWMIString(IWbemServices* pServices, const wchar_t* wmiCl
                                       NULL, &pEnumerator);
     SysFreeString(bstrWQL);
     SysFreeString(bstrQuery);
-    if (FAILED(hr) || !pEnumerator)
+    if (FAILED(hr))
         return hr;
+    if (!pEnumerator)
+        return E_FAIL;
     hr = pEnumerator->Next(WBEM_INFINITE, 1, &pObj, &uReturned);
-    if (FAILED(hr) || uReturned == 0 || !pObj) {
-        if (pEnumerator) pEnumerator->Release();
+    if (FAILED(hr)) {
+        pEnumerator->Release();
         return hr;
+    }
+    if (uReturned == 0 || !pObj) {
+        pEnumerator->Release();
+        return E_FAIL;
     }
     VariantInit(&vtProp);
     hr = pObj->Get(prop, 0, &vtProp, 0, 0);
@@ -119,104 +126,154 @@ static HRESULT hwid_readWMIString(IWbemServices* pServices, const wchar_t* wmiCl
 
 
 
-// Retrieves the physical drive number for the volume containing the Windows directory
-BOOL hwid_getSystemDrivePhysicalNumber(DWORD *outDriveNumber, char *errorBuffer, size_t errorBufferSize) {
-    // Get the Windows directory path, e.g., "C:\Windows"
-    char windowsPath[MAX_PATH] = {0};
-    if (!GetWindowsDirectoryA(windowsPath, MAX_PATH)) {
-        snprintf(errorBuffer, errorBufferSize, "GetWindowsDirectoryA failed (err=%lu)", GetLastError());
-        return FALSE;
+HRESULT hwid_WMI_readSystemDiskSerialAndModel(IWbemServices* pSvc, char* outSerial, char* outModel, char *errorBuffer, size_t errorBufferSize) {
+    HRESULT hr = S_OK;
+    IEnumWbemClassObject* pEnumerator = nullptr;
+    IWbemClassObject* pDisk = nullptr;
+    IWbemClassObject* pPartition = nullptr;
+    IWbemClassObject* pDrive = nullptr;
+    ULONG returnedCount = 0;
+    VARIANT varDeviceID, varPartitionDeviceID, varModel, varSerial;
+    BSTR bstrWQL = nullptr;
+    BSTR bstrQuery = nullptr;
+    WCHAR query[256];
+
+    VariantInit(&varDeviceID);
+    VariantInit(&varPartitionDeviceID);
+    VariantInit(&varModel);
+    VariantInit(&varSerial);
+
+    bstrWQL = SysAllocString(L"WQL");
+
+    // Step 1: Get logical disk (C:)
+    bstrQuery = SysAllocString(L"SELECT * FROM Win32_LogicalDisk WHERE DeviceID='C:'");
+    hr = pSvc->ExecQuery(bstrWQL, bstrQuery, WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, NULL, &pEnumerator);
+    if (FAILED(hr)) {
+        snprintf(errorBuffer, errorBufferSize, "ExecQuery for Win32_LogicalDisk failed (0x%08X)", (unsigned int)hr);
+        goto cleanup;
+    }
+    SysFreeString(bstrQuery);
+    bstrQuery = nullptr;
+
+    hr = pEnumerator->Next(WBEM_INFINITE, 1, &pDisk, &returnedCount);
+    if (FAILED(hr)) {
+        snprintf(errorBuffer, errorBufferSize, "Next on logical disk enumerator failed (0x%08X)", (unsigned int)hr);
+        goto cleanup;
+    }
+    if (returnedCount == 0) {
+        hr = E_FAIL;
+        snprintf(errorBuffer, errorBufferSize, "No logical disk found for C:");
+        goto cleanup;
+    }
+    pEnumerator->Release(); 
+    pEnumerator = nullptr;
+
+    hr = pDisk->Get(L"DeviceID", 0, &varDeviceID, 0, 0);
+    if (FAILED(hr)) {
+        snprintf(errorBuffer, errorBufferSize, "Failed to get DeviceID from logical disk (0x%08X)", (unsigned int)hr);
+        goto cleanup;
     }
 
-    // Open volume handle, e.g., "\\.\C:"
-    char volPath[8] = {0};
-    sprintf_s(volPath, sizeof(volPath), "\\\\.\\%c:", windowsPath[0]);
-    HANDLE hVol = CreateFileA(volPath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-    if (hVol == INVALID_HANDLE_VALUE) {
-        snprintf(errorBuffer, errorBufferSize, "CreateFileA('%s') failed (err=%lu)", volPath, GetLastError());
-        return FALSE;
+    // Step 2: Map logical disk to partition
+    swprintf(query, 256, L"ASSOCIATORS OF {Win32_LogicalDisk.DeviceID='%ls'} WHERE AssocClass=Win32_LogicalDiskToPartition", varDeviceID.bstrVal);
+    bstrQuery = SysAllocString(query);
+    hr = pSvc->ExecQuery(bstrWQL, bstrQuery, WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, NULL, &pEnumerator);
+    if (FAILED(hr)) {
+        snprintf(errorBuffer, errorBufferSize, "ExecQuery for LogicalDiskToPartition failed (0x%08X)", (unsigned int)hr);
+        goto cleanup;
+    }
+    SysFreeString(bstrQuery);
+    bstrQuery = nullptr;
+
+    hr = pEnumerator->Next(WBEM_INFINITE, 1, &pPartition, &returnedCount);
+    if (FAILED(hr)) {
+        snprintf(errorBuffer, errorBufferSize, "Next on partition enumerator failed (0x%08X)", (unsigned int)hr);
+        goto cleanup;
+    }
+    if (returnedCount == 0) {
+        hr = E_FAIL;
+        snprintf(errorBuffer, errorBufferSize, "No partition found for logical disk");
+        goto cleanup;
+    }
+    pEnumerator->Release(); 
+    pEnumerator = nullptr;
+
+    hr = pPartition->Get(L"DeviceID", 0, &varPartitionDeviceID, 0, 0);
+    if (FAILED(hr)) {
+        snprintf(errorBuffer, errorBufferSize, "Failed to get DeviceID from partition (0x%08X)", (unsigned int)hr);
+        goto cleanup;
+    }
+    
+
+    // Step 3: Map partition to physical disk
+    swprintf(query, 256, L"ASSOCIATORS OF {Win32_DiskPartition.DeviceID='%ls'} WHERE AssocClass=Win32_DiskDriveToDiskPartition", varPartitionDeviceID.bstrVal);
+    bstrQuery = SysAllocString(query);
+    hr = pSvc->ExecQuery(bstrWQL, bstrQuery, WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, NULL, &pEnumerator);
+    if (FAILED(hr)) {
+        snprintf(errorBuffer, errorBufferSize, "ExecQuery for DiskDriveToDiskPartition failed (0x%08X)", (unsigned int)hr);
+        goto cleanup;
+    }
+    SysFreeString(bstrQuery);
+    bstrQuery = nullptr;
+
+    hr = pEnumerator->Next(WBEM_INFINITE, 1, &pDrive, &returnedCount);
+    if (FAILED(hr)) {
+        snprintf(errorBuffer, errorBufferSize, "Next on drive enumerator failed (0x%08X)", (unsigned int)hr);
+        goto cleanup;
+    }
+    if (returnedCount == 0) {
+        hr = E_FAIL;
+        snprintf(errorBuffer, errorBufferSize, "No physical drive found for partition");
+        goto cleanup;
+    }
+    pEnumerator->Release();
+    pEnumerator = nullptr;
+    
+
+    // Get Model
+    hr = pDrive->Get(L"Model", 0, &varModel, 0, 0);
+    if (FAILED(hr)) {
+        snprintf(errorBuffer, errorBufferSize, "Failed to get Model from drive (0x%08X)", (unsigned int)hr);
+        goto cleanup;
+    }
+    if (varModel.vt == VT_BSTR && outModel)
+        WideCharToMultiByte(CP_ACP, 0, varModel.bstrVal, -1, outModel, MAX_WMI_BUFFER_SIZE, NULL, NULL);
+    else
+        outModel[0] = '\0';
+
+
+    // Get SerialNumber
+    hr = pDrive->Get(L"SerialNumber", 0, &varSerial, 0, 0);
+    if (FAILED(hr)) {
+        snprintf(errorBuffer, errorBufferSize, "Failed to get SerialNumber from drive (0x%08X)", (unsigned int)hr);
+        goto cleanup;
+    }
+    if (varSerial.vt == VT_BSTR && outSerial)
+        WideCharToMultiByte(CP_ACP, 0, varSerial.bstrVal, -1, outSerial, MAX_WMI_BUFFER_SIZE, NULL, NULL);
+    else
+        outSerial[0] = '\0';
+
+    // Fallback to volume serial number (usefull for Wine where serial number is not available)
+    if (outSerial[0] == '\0') {
+        DWORD serial;
+        GetVolumeInformationA("C:\\", NULL, 0, &serial, NULL, NULL, NULL, 0);
+        snprintf(outSerial, MAX_WMI_BUFFER_SIZE, "%lu", serial);
     }
 
-    // Query the volume disk extents to get the physical drive number, e.g., "PhysicalDrive0"
-    VOLUME_DISK_EXTENTS extents;
-    ZeroMemory(&extents, sizeof(extents));
-    DWORD bytesReturned = 0;
-    BOOL ok = DeviceIoControl(hVol, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, NULL, 0, &extents, sizeof(extents), &bytesReturned, NULL);
-    CloseHandle(hVol);
-    if (!ok) {
-        snprintf(errorBuffer, errorBufferSize, "DeviceIoControl(IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS) failed (err=%lu)", GetLastError());
-        return FALSE;
-    }
-    if (extents.NumberOfDiskExtents < 1) {
-        snprintf(errorBuffer, errorBufferSize, "DeviceIoControl(IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS) returned no disk extents");
-        return FALSE;
-    }
-    *outDriveNumber = extents.Extents[0].DiskNumber;
+    hr = S_OK;
 
-    return TRUE;
-}
-
-
-// Reads the serial number of "PhysicalDriveN"
-BOOL hwid_getDiskSerial(
-    DWORD driveNumber, 
-    char *outSerial, size_t outSerialSize, 
-    char *outProductId, size_t outProductIdSize, 
-    char *errorBuffer, size_t errorBufferSize) 
-{
-    // Open the physical drive handle, e.g., "\\.\PhysicalDrive0"
-    char devicePath[64];
-    sprintf_s(devicePath, sizeof(devicePath), "\\\\.\\PhysicalDrive%u", driveNumber);
-    HANDLE h = CreateFileA(devicePath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (h == INVALID_HANDLE_VALUE) {
-        sprintf_s(errorBuffer, errorBufferSize, "CreateFileA('%s') failed (err=%lu)", devicePath, GetLastError());
-        return FALSE;
-    }
-
-    // Query the storage device properties to get the device data
-    STORAGE_PROPERTY_QUERY query;
-    ZeroMemory(&query, sizeof(query));
-    BYTE buffer[1024] = {0};
-    DWORD bytesReturned = 0;
-    BOOL success = DeviceIoControl(h, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), buffer, sizeof(buffer), &bytesReturned, NULL);
-    CloseHandle(h);
-    if (!success) {
-        sprintf_s(errorBuffer, errorBufferSize, "DeviceIoControl(IOCTL_STORAGE_QUERY_PROPERTY) failed (err=%lu)", GetLastError());
-        return FALSE;
-    }
-    if (bytesReturned < sizeof(STORAGE_DEVICE_DESCRIPTOR)) {
-        sprintf_s(errorBuffer, errorBufferSize, "DeviceIoControl returned too few bytes (%lu)", bytesReturned);
-        return FALSE;
-    }
-    STORAGE_DEVICE_DESCRIPTOR *desc = (STORAGE_DEVICE_DESCRIPTOR *)buffer;
-
-    // Check for serial number
-    ULONG serialNumberOffset = desc->SerialNumberOffset;
-    if (serialNumberOffset == 0 || serialNumberOffset >= bytesReturned) {
-        sprintf_s(errorBuffer, errorBufferSize, "No serial number offset in descriptor");
-        return FALSE;
-    }
-
-    // Check for product id
-    ULONG productIdOffset = desc->ProductIdOffset;
-    if (productIdOffset == 0 || productIdOffset >= bytesReturned) {
-        sprintf_s(errorBuffer, errorBufferSize, "No product ID offset in descriptor");
-        return FALSE;
-    }
-
-    // Copy serial string
-    if (strncpy_s(outSerial, outSerialSize, (char *)buffer + serialNumberOffset, _TRUNCATE) != 0) {
-        sprintf_s(errorBuffer, errorBufferSize, "Failed to copy serial string");
-        return FALSE;
-    }
-
-    // Copy product ID
-    if (strncpy_s(outProductId, outProductIdSize, (char *)buffer + productIdOffset, _TRUNCATE) != 0) {
-        sprintf_s(errorBuffer, errorBufferSize, "Failed to copy product ID");
-        return FALSE;
-    }
-
-    return TRUE;
+cleanup:
+    if (pEnumerator) pEnumerator->Release();
+    if (pDisk) pDisk->Release();
+    if (pPartition) pPartition->Release();
+    if (pDrive) pDrive->Release();
+    if (bstrWQL) SysFreeString(bstrWQL);
+    if (bstrQuery) SysFreeString(bstrQuery);
+    VariantClear(&varDeviceID);
+    VariantClear(&varPartitionDeviceID);
+    VariantClear(&varModel);
+    VariantClear(&varSerial);
+    return hr;
 }
 
 
@@ -224,12 +281,11 @@ BOOL hwid_getDiskSerial(
 /**
  * Loads all required WMI properties into shared global variables.
  */
-HRESULT hwid_loadProperties(char* errorBuffer, size_t errorBufferSize)
+HRESULT hwid_WMI_loadProperties(char* errorBuffer, size_t errorBufferSize)
 {
     HRESULT hr;
     IWbemLocator *pLocator = NULL;
     IWbemServices *pServices = NULL;
-    DWORD driveNumber = 0;
 
     // Buffer to store names of missing properties
     char missingProps[512] = {0};
@@ -272,7 +328,7 @@ HRESULT hwid_loadProperties(char* errorBuffer, size_t errorBufferSize)
 
     // Iterate and read each property, check for errors
     for (size_t i = 0; i < sizeof(properties)/sizeof(properties[0]); ++i) {
-        HRESULT propHr = hwid_readWMIString(pServices, properties[i].wmiClass, properties[i].property, properties[i].buffer, properties[i].bufferSize);
+        HRESULT propHr = hwid_WMI_readFirstString(pServices, properties[i].wmiClass, properties[i].property, properties[i].buffer, properties[i].bufferSize);
         if (FAILED(propHr)) {
             hr = propHr;
             sprintf_s(errorBuffer, errorBufferSize, "Failed to read WMI property '%ls.%ls'", properties[i].wmiClass, properties[i].property);
@@ -288,12 +344,8 @@ HRESULT hwid_loadProperties(char* errorBuffer, size_t errorBufferSize)
     }
 
     // Read disk model and serial
-    if (!hwid_getSystemDrivePhysicalNumber(&driveNumber, errorBuffer, errorBufferSize)) {
-        hr = E_FAIL;
-        goto cleanup;
-    }
-    if (!hwid_getDiskSerial(driveNumber, hwid_disk_serial, sizeof(hwid_disk_serial), hwid_disk_model, sizeof(hwid_disk_model), errorBuffer, errorBufferSize)) {
-        hr = E_FAIL;
+    hr = hwid_WMI_readSystemDiskSerialAndModel(pServices, hwid_disk_serial, hwid_disk_model, errorBuffer, errorBufferSize);
+    if (FAILED(hr)) {
         goto cleanup;
     }
     if (hwid_disk_model[0] == '\0') {
@@ -688,7 +740,7 @@ void hwid_init()
 {
     HRESULT hr;
     char errorBuffer[512];
-    while ((hr = hwid_loadProperties(errorBuffer, sizeof(errorBuffer))) != S_OK) {
+    while ((hr = hwid_WMI_loadProperties(errorBuffer, sizeof(errorBuffer))) != S_OK) {
         showErrorMessage("Fatal Error", "Error while generating HWID.\n\nUnable to load WMI properties.\nError: 0x%08X %s", hr, errorBuffer);
         int result = MessageBoxA(NULL, 
             "Do you want to retry or exit?\n\nIf the problem persists, please restart your computer and try again.", 
