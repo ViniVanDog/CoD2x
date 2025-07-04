@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "shared.h"
+#include "system.h"
 
 /**
  * Check if the current process is running with elevated privileges.
@@ -104,6 +105,11 @@ bool admin_check() {
     // If the process is already running with elevated privileges, exit
     if (admin_isElevated()) {
         return TRUE;
+    }
+
+    // If running under Wine, do not prompt for admin rights
+    if (SYS_WINE_BUILD[0] != '\0') {
+        return true;
     }
         
     // Get the full path of the current executable
