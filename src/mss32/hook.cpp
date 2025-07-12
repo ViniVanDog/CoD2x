@@ -19,6 +19,7 @@
 #include "registry.h"
 #include "error.h"
 #include "downloading.h"
+#include "debug.h"
 #include "../shared/common.h"
 #include "../shared/server.h"
 #include "../shared/game.h"
@@ -63,7 +64,10 @@ void hook_Com_Frame()
 
         // New DLL is requested to be loaded, unload the old one and load the new one
         if (hotreload_requested) {
+            
             hotreload_unload();
+            debug_unload();
+
             hotreload_loadDLL();
             return;
         }
@@ -77,6 +81,7 @@ void hook_Com_Frame()
     }
 
     // Shared & Server
+    debug_frame();
     freeze_frame();
     updater_frame();
     hwid_frame();
@@ -203,6 +208,7 @@ void hook_Com_Init(const char* cmdline) {
     Com_Printf("Command line: '%s'\n", cmdline);
 
     exception_init();   // sending thru NET will work after Com_Init is called and updater is initialized
+    debug_init();
 
     // Call the original function
     if (!DLL_HOTRELOAD) {
