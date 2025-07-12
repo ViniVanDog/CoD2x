@@ -181,9 +181,23 @@ $(SHARED_SRC_DIR)/version.h: makefile
 # ========================================================================================================
 
 # MSS32 Windows target
-build_mss32_win: prebuild $(WIN_MSS32_TARGET)
+build_mss32_win:
+	$(MAKE) prebuild
+	$(MAKE) build_mss32_win_target
+	@echo.
 	@echo "MSS32 (Windows) build complete."
 	@echo.
+	@echo.
+
+build_mss32_win_target: $(WIN_MSS32_TARGET)
+	@echo.
+	@echo.
+
+rebuild_mss32_win:
+	$(MAKE) clean_win
+	$(MAKE) build_mss32_win
+	@echo.
+	@echo "MSS32 (Windows) rebuild complete."
 	@echo.
 	@echo.
 
@@ -273,10 +287,23 @@ $(WIN_MSS32_OBJ_DIR) $(WIN_BIN_DIR):
 # ========================================================================================================
 
 # CoD2x Linux target
-build_cod2x_linux: prebuild $(LINUX_TARGET)
+build_cod2x_linux:
+	$(MAKE) prebuild
+	$(MAKE) build_cod2x_linux_target
+	@echo ""
 	@echo "CoD2x (Linux) build complete."
 	@echo ""
 
+build_cod2x_linux_target: $(LINUX_TARGET)
+	@echo ""
+
+rebuild_cod2x_linux:
+	$(MAKE) clean_lin
+	$(MAKE) build_cod2x_linux
+	@echo ""
+	@echo "CoD2x (Linux) rebuild complete."
+	@echo ""
+	
 $(LINUX_TARGET): $(LINUX_OBJECTS)
 	@echo "Linking to $@..."
 	$(LINUX_CC) $(LINUX_LFLAGS) -o $@ $^ $(LINUX_LIBS)
@@ -390,16 +417,21 @@ zip_all: zip_win zip_linux
 # Cleaning Up
 # ========================================================================================================
 
-clean: zip_win_clean zip_linux_clean
-	@echo "Cleaning up build files..."
+clean_win:
+	@echo "Cleaning up Windows build files..."
 	@if exist $(subst /,\, $(WIN_MSS32_OBJ_DIR))\*.o del /Q $(subst /,\, $(WIN_MSS32_OBJ_DIR))\*.o
 	@if exist $(subst /,\, $(WIN_MSS32_OBJ_DIR))\*.d del /Q $(subst /,\, $(WIN_MSS32_OBJ_DIR))\*.d
-	@if exist $(subst /,\, $(LINUX_OBJ_DIR))\*.o del /Q $(subst /,\, $(LINUX_OBJ_DIR))\*.o
-	@if exist $(subst /,\, $(LINUX_OBJ_DIR))\*.d del /Q $(subst /,\, $(LINUX_OBJ_DIR))\*.d
 	@if exist $(subst /,\, $(WIN_MSS32_TARGET)) del /Q $(subst /,\, $(WIN_MSS32_TARGET))
-	@if exist $(subst /,\, $(LINUX_TARGET)) del /Q $(subst /,\, $(LINUX_TARGET))
 	@if exist $(subst /,\, $(WIN_MSS32_OBJ_DIR)/version.res) del /Q $(subst /,\, $(WIN_MSS32_OBJ_DIR)/version.res)
-	@echo "Done."
+	@echo "Windows clean done."
+
+clean_lin:
+	@echo "Cleaning up Linux build files..."
+	@rm -f $(LINUX_OBJ_DIR)/*.o
+	@rm -f $(LINUX_OBJ_DIR)/*.d
+	@rm -f $(LINUX_TARGET)
+	@echo "Linux clean done."
+
 
 # ========================================================================================================
 # Phony Targets

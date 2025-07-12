@@ -2,10 +2,10 @@
     "version": "2.0.0",
     "tasks": [    
         {
-            "label": "Clean All",
+            "label": "Clean Win",
             "type": "shell",
             "command": "mingw32-make.exe",
-            "args": ["clean"],
+            "args": ["clean_win"],
             "group": {
                 "kind": "build",
             },
@@ -18,7 +18,16 @@
             }
         },
         {
-            "label": "Build MSS32",
+            "label": "Clean Linux",
+            "type": "shell",
+            "command": "wsl",
+            "args": ["make", "clean_lin"],
+            "group": {
+                "kind": "build"
+            },
+        },
+        {
+            "label": "Build Win",
             "type": "shell",
             "command": "mingw32-make.exe",
             "args": ["build_mss32_win", "-j${env:NUMBER_OF_PROCESSORS}"],
@@ -34,7 +43,7 @@
         },
 
         {
-            "label": "Build CoD2x Linux",
+            "label": "Build Linux",
             "type": "shell",
             "command": "wsl",
             "args": ["make", "build_cod2x_linux", "-j${env:NUMBER_OF_PROCESSORS}"],
@@ -73,10 +82,10 @@
             }
         },
         {
-            "label": "Build MSS32 RELEASE",
+            "label": "Rebuild Win RELEASE",
             "type": "shell",
             "command": "mingw32-make.exe",
-            "args": ["build_mss32_win", "-j${env:NUMBER_OF_PROCESSORS}", "DEBUG=0"],
+            "args": ["rebuild_mss32_win", "-j${env:NUMBER_OF_PROCESSORS}", "DEBUG=0"],
             "group": {
                 "kind": "build"
             },
@@ -88,10 +97,10 @@
             }
         },
         {
-            "label": "Build Linux RELEASE",
+            "label": "Rebuild Linux RELEASE",
             "type": "shell",
             "command": "wsl",
-            "args": ["make", "build_cod2x_linux", "-j${env:NUMBER_OF_PROCESSORS}", "DEBUG=0"],
+            "args": ["make", "rebuild_cod2x_linux", "-j${env:NUMBER_OF_PROCESSORS}", "DEBUG=0"],
             "group": {
                 "kind": "build"
             },

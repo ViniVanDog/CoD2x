@@ -20,7 +20,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "Build MSS32",
+            "preLaunchTask": "Build Win",
             "internalConsoleOptions": "neverOpen"
         },
         {
@@ -42,7 +42,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "Build MSS32",
+            "preLaunchTask": "Build Win",
             "internalConsoleOptions": "neverOpen"
         },
         {
@@ -62,7 +62,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "Build MSS32"
+            "preLaunchTask": "Build Win"
         },
         {
             "name": "Linux server",
