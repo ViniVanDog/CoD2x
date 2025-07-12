@@ -515,11 +515,12 @@ char* hwid_generate_long()
     hwid_changed = false;
 
 
-    // User has upgraded / downgraded to 1.4.4.4 - in this version we have restarted the HWID2 data
-    if (registry_version_changed && strcmp(APP_VERSION, "1.4.4.4") == 0) {
+    // In version 1.4.4.4 we have restarted the HWID2 data
+    // Example: previous version was 1.4.4.3 and user upgraded to 1.4.4.5, meaning 1.4.4.4 was skipped (in which HWID was restarted) -> we need to restart the HWID
+    bool isUpgradeFromOldVersion_1_4_4_4_OrOlder = registry_version_changed && (registry_previous_version[0] == '\0' || version_compare(registry_previous_version, "1.4.4.4") < 0);
+    if (isUpgradeFromOldVersion_1_4_4_4_OrOlder) {
         hwid_restartRegistry();
     }
-
 
     if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Activision\\Call of Duty 2", 0, KEY_READ | KEY_WRITE, &hKey) == ERROR_SUCCESS)
     {
