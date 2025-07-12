@@ -894,9 +894,9 @@ void G_RunFrame(int time) {
 			for (int i = 0; i < MAX_GENTITIES; i++)
 			{
 				gentity_t* ent = &g_entities[i];
-				if (ent->client && ent->r.inuse && ent->s.eType == ET_PLAYER)
+				if (ent->client && ent->r.inuse && ent->s.eType == ET_PLAYER && ent->health > 0)
 				{
-					ent->r.broadcastTime = svs_time + 300; // if we keep broadcastTime bigger then svs.time, the client will be sent to all other clients
+					ent->r.broadcastTime = svs_time + 1; // if we keep broadcastTime bigger then svs.time, the client will be sent to all other clients
 				}
 			}
 		}
