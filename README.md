@@ -7,7 +7,8 @@ It focuses on fixing bugs and adding new features to the game.
 
 # Version history
 
-- 2025-07-04 - 1.4.4.4 - current
+- 2025-07-12 - 1.4.4.5 - current
+- 2025-07-04 - 1.4.4.4
 - 2025-06-27 - 1.4.4.3
 - 2025-06-23 - 1.4.4.2
 - 2025-06-20 - 1.4.4.1
@@ -135,7 +136,7 @@ It focuses on fixing bugs and adding new features to the game.
 
 # How to install (client on Windows)
 1. You need original Call of Duty 2 with version [1.3](https://www.moddb.com/games/call-of-duty-2/downloads/call-of-duty-2-pc-patch-v-13) installed.
-2. Download latest version of CoD2x - [CoD2x_1.4.4.4_windows.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.4.4/CoD2x_1.4.4.4_windows.zip)
+2. Download latest version of CoD2x - [CoD2x_1.4.4.5_windows.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.4.5/CoD2x_1.4.4.5_windows.zip)
 3. Extract these files from the archive to the Call of Duty 2 folder, replacing any existing file:
     - 📄 mss32.dll
     - 📄 mss32_original.dll
@@ -164,7 +165,7 @@ It focuses on fixing bugs and adding new features to the game.
 
 
 # How to install (server on Linux)
-1. Download latest version of CoD2x - [CoD2x_1.4.4.4_linux.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.4.4/CoD2x_1.4.4.4_linux.zip)
+1. Download latest version of CoD2x - [CoD2x_1.4.4.5_linux.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.4.5/CoD2x_1.4.4.5_linux.zip)
 2. Extract this file from the archive to the Call of Duty 2 folder:
     - 📄 libCoD2x.so
 3. Final structure should look like this:
