@@ -50,6 +50,10 @@ void error_sendCrashData(unsigned int exceptionCode, unsigned int exceptionAddre
 }
 
 void error_sendErrorData(const char* message) {
+
+    #if DEBUG
+        return;
+    #endif
     
     if (updater_address.type == NA_INIT && error_updaterCanResolve) {
         updater_resolveServerAddress();
