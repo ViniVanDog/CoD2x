@@ -303,6 +303,10 @@ bool hook_patch() {
         "Normal config should contains no more than 400 lines of dvars. Compare your config with a default one to find the differences.");
 
 
+    // Fix console not closing when fatal error occured for server
+    patch_byte(0x0046853b, 0xeb); // je => jmp  0x74 => 0xeb
+
+
     // Hot-reloading in debug mode
     #if DEBUG
         // DLL was hot-reloaded, we need to call the init functions again
