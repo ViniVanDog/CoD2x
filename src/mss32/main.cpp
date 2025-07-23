@@ -165,6 +165,14 @@ bool main_getExeData() {
         SHOW_ERROR_WITH_LAST_ERROR("Failed to get the executable path in Unicode.");
         return false;
     }
+    if (lenW >= MAX_PATH - 30) { // 30 is a reserve
+        // Path may be truncated; recommend using a larger buffer or dynamic allocation for long paths
+        showErrorMessage("Path too long",
+            "Call of Duty 2 directory path is too long.\n\n"
+            "Please move the game to a directory with a shorter path.\n\n"
+            "Current path: \n%s\n\n", exePath);
+        return false;
+    }
 
     // Check if the path contains non-standard characters
     // Convert to ANSI using system default code page
