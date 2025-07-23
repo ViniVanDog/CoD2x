@@ -142,6 +142,7 @@ bool main_patchEntryPoint() {
  * Get the module, executable path and directory
  */
 bool main_getExeData() {
+    WCHAR exePathW[MAX_PATH];
     char exePath[MAX_PATH];
     char exeDirectory[MAX_PATH];
 
@@ -153,9 +154,36 @@ bool main_getExeData() {
     }
     EXE_HMODULE = hModule;
 
-    // Get the full path of the current executable
+    // Get the full path of the current executable in ANSI
     if (GetModuleFileNameA(NULL, exePath, MAX_PATH) == 0) {
         SHOW_ERROR_WITH_LAST_ERROR("Failed to get the executable path.");
+        return false;
+    }
+    // Get the full path of the current executable in Unicode
+    DWORD lenW = GetModuleFileNameW(NULL, exePathW, MAX_PATH);
+    if (lenW == 0) {
+        SHOW_ERROR_WITH_LAST_ERROR("Failed to get the executable path in Unicode.");
+        return false;
+    }
+
+    // Check if the path contains non-standard characters
+    // Convert to ANSI using system default code page
+    CHAR exePathWConverted[MAX_PATH];
+    int lenA = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, exePathW, -1, exePathWConverted, MAX_PATH, NULL, NULL);
+    bool containsWideChars = (lenA == 0 || lenA >= MAX_PATH);
+    // Check for '?' replacements (common for unconvertible Unicode)
+    for (int i = 0; i < lenA; i++) {
+        if (exePathWConverted[i] == '?') {
+            containsWideChars = true; // Found unrepresentable character
+            break;
+        }
+    }
+    if (containsWideChars) {
+        showErrorMessage("Non-standard characters in path",  
+            "Call of Duty 2 directory path contains non-standard characters.\n\n"
+            "Please move the game folder or rename the directory path to a path that contains only standard characters (A-Z, a-z, 0-9, and symbols like _).\n\n"
+            "Path: \n%s\n\n"
+            "'?' - question mark represents the invalid character", exePathWConverted);
         return false;
     }
 
