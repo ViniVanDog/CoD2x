@@ -13,6 +13,9 @@ char SYS_WINE_VERSION[64] = {0};
 char SYS_WINE_BUILD[64] = {0};
 char SYS_VERSION_INFO[256] = {0};
 char SYS_VM_NAME[64] = {0}; // Name of the virtualization platform, if detected
+char SYS_COMPATIBILITY_FLAGS[64] = {0}; // Stores compatibility flags if any
+
+extern bool admin_isElevated();
 
 
 // Retrieves Windows version information from the registry to get the real data (to bypass compatibility modes).
@@ -91,6 +94,36 @@ bool system_getWineVersion() {
     return true;
 }
 
+
+/**
+ * Check if "Run as Administrator" or compatibility flag is set for the specified executable.
+ * Returns true if any flag is set, false otherwise.
+ */
+void system_getCompatibilityFlags() {
+    HKEY hKey;
+    const char* registryPath = "Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers";
+    LONG result;
+    char valueData[512] = {0};
+    DWORD valueSize = sizeof(valueData);
+
+    // Open the Layers registry key for querying value
+    result = RegOpenKeyExA(HKEY_CURRENT_USER, registryPath, 0, KEY_QUERY_VALUE, &hKey);
+    if (result != ERROR_SUCCESS) return; // Key does not exist, so no flags are set
+
+    // Query the value for the specified executable path
+    result = RegQueryValueExA(hKey, EXE_PATH, NULL, NULL, (LPBYTE)valueData, &valueSize);
+
+    RegCloseKey(hKey);
+
+    if (result != ERROR_SUCCESS) return; // Value does not exist, so no flags are set
+
+    // List of known compatibility flags to check
+    // "RUNASADMIN", "WIN95", "WIN98", "WINXPSP2", "WINXPSP3", "VISTARTM", "VISTASP1", "WIN7RTM", "WIN8RTM",
+
+    strncpy(SYS_COMPATIBILITY_FLAGS, valueData, sizeof(SYS_COMPATIBILITY_FLAGS) - 1);
+}
+
+
 // Checks if the system is running under a virtual machine by checking the BIOS information.
 bool system_isVirtualMachineBios() {
     char buffer[256] = {0};
@@ -155,10 +188,6 @@ void system_getInfo() {
     // Get virtualization info
     bool isVM = system_isVirtualMachineBios();
 
-    // Get country code
-    char countryCode[8] = {0};
-    system_getCountryCode(countryCode, sizeof(countryCode)); 
-
     char virtualization[512];
     if (isWine) {
         snprintf(virtualization, sizeof(virtualization), "wine-%s-%s", SYS_WINE_VERSION, SYS_WINE_BUILD);
@@ -168,9 +197,20 @@ void system_getInfo() {
         snprintf(virtualization, sizeof(virtualization), "0");
     }
 
+    // Get country code
+    char countryCode[8] = {0};
+    system_getCountryCode(countryCode, sizeof(countryCode)); 
+
+    // Get compatibility flags
+    system_getCompatibilityFlags();
+
+    // If running with admin rights, append "admin" to the virtualization string
+    bool isElevated = admin_isElevated();
+
+
     // Compose final version info string
-    // Format: "<build>-<edition>-<displayVersion>-<country>-<virtualization>"
-    snprintf(SYS_VERSION_INFO, sizeof(SYS_VERSION_INFO), "%s\n%s\n%s\n%s\n%s", SYS_WIN_BUILD, SYS_WIN_EDITION, SYS_WIN_DISPLAY_VERSION, countryCode, virtualization);
+    // Format: "<build>-<edition>-<displayVersion>-<country>-<virtualization>-<compatibilityFlags>-<admin>"
+    snprintf(SYS_VERSION_INFO, sizeof(SYS_VERSION_INFO), "%s\n%s\n%s\n%s\n%s\n%s\n%s", SYS_WIN_BUILD, SYS_WIN_EDITION, SYS_WIN_DISPLAY_VERSION, countryCode, virtualization, SYS_COMPATIBILITY_FLAGS, isElevated ? "admin" : "user");
 
     //MessageBoxA(NULL, SYS_VERSION_INFO, "System Info", MB_OK | MB_ICONINFORMATION);
 }
