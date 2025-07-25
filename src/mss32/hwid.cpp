@@ -278,6 +278,144 @@ cleanup:
 
 
 
+bool hwid_isIntegratedGPU(const wchar_t *name)
+{
+    if (!name || !*name)
+        return false;
+
+    // Tokens that guarantees a discrete GPU
+    static const wchar_t * const dgpu_tokens[] = {
+        L"NVIDIA", L"GEFORCE", L"RTX", L"GTX", L"QUADRO", L"FIREPRO",
+        L"RADEON PRO", L"RADEON RX", L"RADEON R9", L"RADEON R8",
+        L"RADEON R7 ",            /* space ensures we catch “R7 250” etc.      */
+        L"INTEL ARC"
+    };
+    // Check if the name contains any of the discrete GPU tokens
+    for (size_t i = 0; i < sizeof(dgpu_tokens)/sizeof(dgpu_tokens[0]); ++i)
+    {
+        size_t toklen = wcslen(dgpu_tokens[i]);
+        const wchar_t *p = name;
+        for (; *p; ++p)
+            if (_wcsnicmp(p, dgpu_tokens[i], toklen) == 0)
+                return false;
+    }
+
+    // Tokens that guarantees an integrated GPU
+    static const wchar_t * const igpu_prefix[] = {
+        L"INTEL(R) HD GRAPHICS",    L"INTEL(R) UHD GRAPHICS",
+        L"INTEL(R) IRIS GRAPHICS",  L"INTEL(R) IRIS PLUS GRAPHICS",
+        L"INTEL(R) IRIS XE GRAPHICS",
+        L"INTEL(R) GRAPHICS",       L"INTEL(R) GMA",
+
+        L"AMD RADEON(TM) GRAPHICS", /* Ryzen 7040 “Radeon Graphics”            */
+        L"AMD RADEON(TM) VEGA",     /* Vega iGPU (Ryzen ≤ 5000G)               */
+        L"AMD RADEON VEGA",
+        L"AMD RADEON RX VEGA",      /* RX Vega 3/6/8/11 ‑ note trailing word    */
+
+        L"AMD RADEON R2 GRAPHICS",  L"AMD RADEON R3 GRAPHICS",
+        L"AMD RADEON R4 GRAPHICS",  L"AMD RADEON R5 GRAPHICS",
+        L"AMD RADEON R6 GRAPHICS",  L"AMD RADEON R7 GRAPHICS",
+        L"AMD RADEON R8 GRAPHICS"
+    };
+    // Check if the name starts with any of the integrated GPU prefixes
+    for (size_t i = 0; i < sizeof(igpu_prefix)/sizeof(igpu_prefix[0]); ++i)
+        if (_wcsnicmp(name, igpu_prefix[i], wcslen(igpu_prefix[i])) == 0)
+            return true;
+
+    // Treat Microsoft Basic Display Adapter as integrated (fallback driver)
+    if (_wcsicmp(name, L"Microsoft Basic Display Adapter") == 0)
+        return true;
+
+    return false;
+}
+
+
+HRESULT hwid_WMI_readVideoController(IWbemServices* pSvc, char* outControllerName, char* errorBuffer, size_t errorBufferSize)
+{
+    HRESULT hr = S_OK;
+    IEnumWbemClassObject* pEnumerator = nullptr;
+    IWbemClassObject* pObj = nullptr;
+    ULONG returnedCount = 0;
+    outControllerName[0] = '\0';
+    char fallbackName[MAX_WMI_BUFFER_SIZE] = {0};
+
+    BSTR bstrWQL = SysAllocString(L"WQL");
+    BSTR bstrQuery = SysAllocString(L"SELECT Name, AdapterRAM, PNPDeviceID FROM Win32_VideoController");
+    hr = pSvc->ExecQuery(bstrWQL, bstrQuery,
+                         WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
+                         NULL, &pEnumerator);
+    SysFreeString(bstrWQL);
+    SysFreeString(bstrQuery);
+    if (FAILED(hr)) {
+        snprintf(errorBuffer, errorBufferSize, "ExecQuery for Win32_VideoController failed (0x%08X)", (unsigned int)hr);
+        return hr;
+    }
+    if (!pEnumerator)
+        return E_FAIL;
+
+    bool found = false;
+    while (pEnumerator->Next(WBEM_INFINITE, 1, &pObj, &returnedCount) == S_OK && returnedCount) {
+        VARIANT vtName, vtAdapterRAM, vtPNP;
+        VariantInit(&vtName);
+        VariantInit(&vtAdapterRAM);
+        VariantInit(&vtPNP);
+
+        pObj->Get(L"Name", 0, &vtName, 0, 0);
+        pObj->Get(L"AdapterRAM", 0, &vtAdapterRAM, 0, 0);
+        pObj->Get(L"PNPDeviceID", 0, &vtPNP, 0, 0);
+
+        if (vtName.vt == VT_BSTR && vtName.bstrVal != NULL) {
+            // Store fallback candidate if no fallback stored yet
+            if (fallbackName[0] == '\0') {
+                WideCharToMultiByte(CP_ACP, 0, vtName.bstrVal, -1, fallbackName, MAX_WMI_BUFFER_SIZE, NULL, NULL);
+            }
+
+            bool candidate = false;
+            // If AdapterRAM is a valid number 32-bit integer and PNPDeviceID is a string
+            if ((vtAdapterRAM.vt == VT_I4 || vtAdapterRAM.vt == VT_UI4) && vtPNP.vt == VT_BSTR) {
+                // Check if AdapterRAM is greater than 100MB and PNPDeviceID contains "PCI"
+                if (vtAdapterRAM.uintVal > 100 * 1024 * 1024 && wcsstr(vtPNP.bstrVal, L"PCI") != NULL) {
+                    candidate = true;
+                    // Save as fallback if no other candidate found
+                    WideCharToMultiByte(CP_ACP, 0, vtName.bstrVal, -1, fallbackName, MAX_WMI_BUFFER_SIZE, NULL, NULL);
+                }
+            }
+
+            // Cancel the candidate if the name is one of the integrated graphics names
+            if (candidate && hwid_isIntegratedGPU(vtName.bstrVal)) {
+                candidate = false; // Integrated GPU, not suitable
+            }
+
+            if (candidate) {
+                WideCharToMultiByte(CP_ACP, 0, vtName.bstrVal, -1, outControllerName, MAX_WMI_BUFFER_SIZE, NULL, NULL);
+                found = true;
+            }
+        }
+
+        VariantClear(&vtName);
+        VariantClear(&vtAdapterRAM);
+        VariantClear(&vtPNP);
+        pObj->Release();
+
+        // If we found a suitable controller, break the loop
+        if (found) break;
+    }
+    pEnumerator->Release();
+
+    // If no suitable controller was found, use the fallback name
+    if (!found && fallbackName[0] != '\0') {
+        strncpy(outControllerName, fallbackName, MAX_WMI_BUFFER_SIZE - 1);
+        outControllerName[MAX_WMI_BUFFER_SIZE - 1] = '\0'; // Ensure null-termination
+        found = true; // We have a fallback
+    }
+
+    if (!found) {
+        snprintf(errorBuffer, errorBufferSize, "No suitable external video controller found.");
+        return E_FAIL;
+    }
+    return S_OK;
+}
+
 /**
  * Loads all required WMI properties into shared global variables.
  */
@@ -300,8 +438,7 @@ HRESULT hwid_WMI_loadProperties(char* errorBuffer, size_t errorBufferSize)
         {L"Win32_Processor", L"ProcessorId", hwid_cpu_id, sizeof(hwid_cpu_id)},
         {L"Win32_BaseBoard", L"Manufacturer", hwid_board_manufacturer, sizeof(hwid_board_manufacturer)},
         {L"Win32_BaseBoard", L"SerialNumber", hwid_board_serial, sizeof(hwid_board_serial)},
-        {L"Win32_ComputerSystemProduct", L"UUID", hwid_uuid, sizeof(hwid_uuid)}, // TODO
-        {L"Win32_VideoController", L"Name", hwid_gpuName, sizeof(hwid_gpuName)}
+        {L"Win32_ComputerSystemProduct", L"UUID", hwid_uuid, sizeof(hwid_uuid)}
     };
 
     hr = CoInitializeEx(0, COINIT_APARTMENTTHREADED);
@@ -357,6 +494,15 @@ HRESULT hwid_WMI_loadProperties(char* errorBuffer, size_t errorBufferSize)
         strncat(missingProps, "Disc Serial Number ", sizeof(missingProps) - strlen(missingProps) - 1);
     }
 
+    // Read the GPU name
+    hr = hwid_WMI_readVideoController(pServices, hwid_gpuName, errorBuffer, errorBufferSize);
+    if (FAILED(hr)) {
+        emptyCount++;
+        strncat(missingProps, "Video Controller ", sizeof(missingProps) - strlen(missingProps) - 1);
+    }
+
+
+    // Verify if we have enough properties
     if (emptyCount >= 3) {
         hr = E_FAIL;
         snprintf(errorBuffer, errorBufferSize, "Too many missing WMI properties (%d/%d). Missing: %s",
