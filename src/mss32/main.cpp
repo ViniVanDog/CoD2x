@@ -4,8 +4,6 @@
 
 #include "shared.h"
 #include "hook.h"
-#include "admin.h"
-#include "registry.h"
 #include "system.h"
 #include "mss32_original.h"
 
@@ -35,14 +33,6 @@ bool main_load() {
     }
 
     system_getInfo(); // Get system info (Windows version, Wine version, etc.)
-
-    // Check if the user is an admin
-    ok = admin_check();
-    if (!ok) return FALSE;
-
-    // Check if registry folder exists (so the game is installed correctly)
-    ok = registry_check();
-    if (!ok) return FALSE;
 
     // Patch the game
     ok = hook_patch(); 

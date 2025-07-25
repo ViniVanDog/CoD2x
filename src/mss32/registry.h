@@ -3,7 +3,7 @@
 
 #include <windows.h>
 
-bool registry_check();
 void registry_frame();
+void registry_init();
 
 #endif // REGISTRY_H

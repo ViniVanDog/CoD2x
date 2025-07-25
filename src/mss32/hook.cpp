@@ -5,6 +5,8 @@
 #include <string.h>
 
 #include "shared.h"
+#include "admin.h"
+#include "registry.h"
 #include "affinity.h"
 #include "hotreload.h"
 #include "exception.h"
@@ -16,7 +18,6 @@
 #include "updater.h"
 #include "hwid.h"
 #include "master_server.h"
-#include "registry.h"
 #include "error.h"
 #include "downloading.h"
 #include "debug.h"
@@ -174,15 +175,18 @@ void hook_CL_Init() {
 /**
  * SV_Init
  *  - Is called in Com_Init after inicialization of:
+ *    - splash screen
+ *    - parse command line arguments
  *    - common cvars (dedicated, net, version, com_maxfps, developer, timescale, shortversion, net_*, ...)
  *    - commands (exec, quit, wait, bind, ...)
+ *    - file system initialization (loading iwd files, reading registry cdkey)
  *  - Original function registers cvars like sv_*
  *  - Network is not initialized yet!
  */
 void hook_SV_Init() {
     logger_add("SV_Init starting...");
 
-    // Shared & Server
+    // Shared & Server 
     freeze_init();
     common_init();
     server_init();
@@ -209,6 +213,8 @@ void hook_Com_Init(const char* cmdline) {
 
     exception_init();   // sending thru NET will work after Com_Init is called and updater is initialized
     debug_init();
+    admin_init();      // Must be called before file system initialization
+    registry_init();   // Must be called before cdkey registry reading
 
     // Call the original function
     if (!DLL_HOTRELOAD) {

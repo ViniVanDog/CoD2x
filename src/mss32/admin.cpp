@@ -1,10 +1,14 @@
+#define _WIN32_WINNT 0x0600
+
 #include "admin.h"
 
 #include <windows.h>
-#include <stdio.h>
+#include <Shlobj.h>
 
 #include "shared.h"
+#include "main.h"
 #include "system.h"
+#include "../shared/cod2_dvars.h"
 
 /**
  * Check if the current process is running with elevated privileges.
@@ -12,12 +16,12 @@
  * This will fix the issues with VirtualStore folder that contains downloaded .iwd file outside of the game directory.
  * It will also enable to auto-update the CoD2x by downloading an dll file from the server.
  */
-int admin_isElevated() {
+bool admin_isElevated() {
     // Open the current process token
     HANDLE token = NULL;
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
         SHOW_ERROR_WITH_LAST_ERROR("Failed to open process token.");
-        return 0; // Assume not admin
+        return false; // Assume not admin
     }
 
     // Try to check token elevation (Windows Vista and later)
@@ -46,104 +50,118 @@ int admin_isElevated() {
 
     // If all checks fail, assume not admin
     CloseHandle(token);
-    return 0;
+    return false;
 }
 
 
-/**
- * Set the "Run as Administrator" compatibility flag in the registry for the specified executable.
- */
-bool admin_setInRegistry(const char* exePath) {
-    HKEY hKey;
-    const char* registryPath = "Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers";
-    const char* value = "RUNASADMIN"; // Compatibility setting to run as administrator
-    LONG result;
+bool admin_isPathUnderVirtualStore(const char* fullPath)
+{
+    char userAppData[MAX_PATH];
+    if (SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, userAppData) != S_OK)
+        return false;
 
-    // Open or create the Layers registry key
-    result = RegCreateKeyExA(
-        HKEY_CURRENT_USER,         // Scope: Current user
-        registryPath,              // Path to the registry key
-        0,                         // Reserved
-        NULL,                      // Class (unused)
-        REG_OPTION_NON_VOLATILE,   // Persistent key
-        KEY_SET_VALUE,             // Permissions to set values
-        NULL,                      // Security attributes
-        &hKey,                     // Output handle to the key
-        NULL                       // Disposition (not needed here)
-    );
+    char virtualStoreRoot[MAX_PATH];
+    snprintf(virtualStoreRoot, MAX_PATH, "%s\\VirtualStore", userAppData);
 
-    if (result != ERROR_SUCCESS) {
-        SHOW_ERROR_WITH_LAST_ERROR("Failed to open or create registry key.");
-        return FALSE;
+    size_t len = strlen(virtualStoreRoot);
+    bool isUnderVirtualStore = (_strnicmp(fullPath, virtualStoreRoot, len) == 0);
+
+    /*if (isUnderVirtualStore) {
+        MessageBoxA(NULL, fullPath, "Path is under VirtualStore", MB_OK | MB_ICONWARNING);
+    }*/
+
+    return isUnderVirtualStore;
+}
+
+bool admin_canWriteToFolderWithoutVirtualization(const char* path)
+{
+    char testFile[MAX_PATH];
+    snprintf(testFile, MAX_PATH, "%s\\__test__.tmp", path);
+
+    HANDLE hFile = CreateFileA(testFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+                               FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+        //MessageBoxA(NULL, "Failed to create test file for write access check.", "Error", MB_OK | MB_ICONERROR);
+        return false;
     }
 
-    // Set the "Run as Administrator" flag for the specified executable
-    result = RegSetValueExA(
-        hKey,                      // Registry key handle
-        exePath,                   // Key name (full path to the executable)
-        0,                         // Reserved
-        REG_SZ,                    // Value type: String
-        (const BYTE*)value,        // Value data: RUNASADMIN
-        (DWORD)(strlen(value) + 1) // Size of the value data (including null terminator)
-    );
+    char resolved[MAX_PATH] = {0};
+    DWORD len = GetFinalPathNameByHandleA(hFile, resolved, MAX_PATH, 0);
+    CloseHandle(hFile);
 
-    if (result != ERROR_SUCCESS) {
-        SHOW_ERROR_WITH_LAST_ERROR("Failed to set 'Run as Administrator' registry value.");
-        RegCloseKey(hKey);
-        return FALSE;
-    }
+    // Strip prefix "\\?\" if present
+    if (strncmp(resolved, "\\\\?\\", 4) == 0)
+        memmove(resolved, resolved + 4, strlen(resolved + 4) + 1);
 
-    // Close the registry key
-    RegCloseKey(hKey);
+    bool isVirtualStore = (len > 0 && admin_isPathUnderVirtualStore(resolved));
 
-    return TRUE;
+    return !isVirtualStore;
 }
 
 
-bool admin_check() {
+void admin_init() {
 
     // If the process is already running with elevated privileges, exit
     if (admin_isElevated()) {
-        return TRUE;
+        //MessageBoxA(NULL, "Running as admin", "CoD2x - Admin check", MB_ICONINFORMATION | MB_OK);
+        return;
     }
 
+    // Process is not elevated, but the game directory is writable without the Virtual Store redirection
+    if (admin_canWriteToFolderWithoutVirtualization(EXE_DIRECTORY_PATH)) {
+        return;
+    }
+    
     // If running under Wine, do not prompt for admin rights
     if (SYS_WINE_BUILD[0] != '\0') {
-        return true;
-    }
-        
-    // Get the full path of the current executable
-    char exePath[MAX_PATH];
-    if (GetModuleFileNameA(NULL, exePath, MAX_PATH) == 0) {
-        SHOW_ERROR_WITH_LAST_ERROR("Failed to get the executable path.");
-        return 0;
+        return;
     }
 
+    char errorMessage[1024];
+    snprintf(errorMessage, sizeof(errorMessage),
+        "Call of Duty 2 requires write access to the game directory.\n"
+        "\n"
+        "Please do one of the following:\n"
+        "- Move the game directory to a location with write access.\n"
+        "- Run the game with elevated administrator permissions.\n"
+        "- Run the game with compatibility mode set to Windows XP.\n"
+        "\n"
+        "This is needed because the game needs to write files to the game installation directory, which is not allowed by default on newer Windows versions.\n"
+        "\n"
+        "Its recommended to move the game directory to a location with write access (e.g. C:\\Games\\Call of Duty 2) and uncheck administrator and compatibility mode for maximum security, if possible.\n"
+        "\n"
+        "Current game directory: \n"
+        "%s\n"
+        , EXE_DIRECTORY_PATH);
+
+    // Show error message
+    MessageBoxA(NULL, errorMessage, "Error", MB_ICONERROR);
+
+    // Ask user if they want to restart the game with administrator privileges
     int result = MessageBoxA(NULL, 
-        "The game Call of Duty 2 requires an administrative privileges in order to run correctly.\n\n"
-        "Would you like to set to always run the game with elevated administrator permissions?", 
-        "CoD2x - Run as administrator", MB_YESNO | MB_ICONERROR);
+        "Would you like to restart the game with administrator privileges?\n\n"
+        "Warning:\n"
+        "For security reasons, this is not recommended.\n"
+        "The recommended way is to move the game directory to a location with write access (e.g. C:\\Games\\Call of Duty 2) and uncheck administrator and compatibility mode for maximum security, if possible.\n\n",
+        "Run as administrator", MB_YESNO | MB_ICONQUESTION);
 
     if (result == IDYES) {
-        
-        bool ok = admin_setInRegistry(exePath);
 
-        if (!ok) {
-            MessageBoxA(NULL, "Failed to set 'Run as Administrator'.\n\n"
-            "Do the following manually:\n"
-            " - right click on \"CoD2MP_s.exe\" and select \"Properties\".\n"
-            " - click on \"Compatibility\" tab.\n"
-            " - check \"Run this program as administrator\" in settings", "CoD2x - Run as administrator", MB_ICONINFORMATION); 
+        // Set up the SHELLEXECUTEINFO structure
+        SHELLEXECUTEINFOA sei;
+        ZeroMemory(&sei, sizeof(sei));
+        sei.cbSize = sizeof(sei);
+        sei.lpVerb = "runas";
+        sei.lpFile = EXE_PATH;
+        sei.lpParameters = EXE_COMMAND_LINE;
+        sei.nShow = SW_SHOWNORMAL;
 
-        } else {
-            MessageBox(NULL, "The application is now set to always run as Administrator.\nThe game will be restarted...", "Success", MB_ICONINFORMATION);
-
-            // Restart the application to apply changes
-            ShellExecute(NULL, "open", exePath, NULL, NULL, SW_SHOWNORMAL);
+        // Relaunch the application with elevated privileges
+        if (!ShellExecuteExA(&sei)) {
+            MessageBoxA(NULL, "Failed to restart as administrator.", "Error", MB_ICONERROR);
         }
     }
     
     ExitProcess(0);
-    
-    return FALSE;  
 }
