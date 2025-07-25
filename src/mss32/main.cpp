@@ -17,6 +17,7 @@ void* originalEntryPoint = NULL;
 HMODULE EXE_HMODULE = NULL;
 char EXE_PATH[MAX_PATH] = {0}; 
 char EXE_DIRECTORY_PATH[MAX_PATH] = {0};
+char EXE_COMMAND_LINE[MAX_PATH] = {0}; // Command line of the executable
 char DLL_PATH[MAX_PATH] = {0}; 
 bool DLL_HOTRELOAD = false; // set to true when the DLL was hot-reloaded in debug mode
 
@@ -138,6 +139,7 @@ bool main_patchEntryPoint() {
     return TRUE;
 }
 
+
 /**
  * Get the module, executable path and directory
  */
@@ -206,8 +208,28 @@ bool main_getExeData() {
     }
 
     // Save the paths
-    strncpy(EXE_PATH, exePath, MAX_PATH);
-    strncpy(EXE_DIRECTORY_PATH, exeDirectory, MAX_PATH);
+    strncpy(EXE_PATH, exePath, MAX_PATH - 1);
+    strncpy(EXE_DIRECTORY_PATH, exeDirectory, MAX_PATH - 1);
+
+
+
+    // Save the command line of the executable
+    LPSTR cmdLine = GetCommandLineA();
+    //   cmdLine = "\"C:\\Games\\Call of Duty 2\\CoD2SP_s.exe\" +set fs_game mods/test"
+    //   cmdLine = "C:\\Games\\Call of Duty 2\\CoD2SP_s.exe +set fs_game mods/test"
+    if (cmdLine && cmdLine[0] == '"') {
+        cmdLine = strchr(cmdLine + 1, '"');
+        if (cmdLine) ++cmdLine;
+    } else if (cmdLine) {
+        cmdLine = strchr(cmdLine, ' ');
+    }
+    if (cmdLine) {
+        while (*cmdLine == ' ') ++cmdLine;
+    } else {
+        cmdLine = (LPSTR)"";
+    }
+    strncpy(EXE_COMMAND_LINE, cmdLine, MAX_PATH - 1);
+
 
 
     // Get this DLL path
@@ -221,7 +243,7 @@ bool main_getExeData() {
         SHOW_ERROR_WITH_LAST_ERROR("Failed to get current DLL path");
         return false;
     }
-    strncpy(DLL_PATH, dllPath, MAX_PATH);
+    strncpy(DLL_PATH, dllPath, MAX_PATH - 1);
     
 
     return true;
