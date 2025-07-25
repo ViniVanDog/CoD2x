@@ -7,6 +7,7 @@ It focuses on fixing bugs and adding new features to the game.
 
 # Version history
 
+- 2025-07-25 - 1.4.4.6 - current
 - 2025-07-12 - 1.4.4.5 - current
 - 2025-07-04 - 1.4.4.4
 - 2025-06-27 - 1.4.4.3
@@ -133,10 +134,11 @@ It focuses on fixing bugs and adding new features to the game.
     - `r_lodScale 1` (default) - original LODs
     - `r_lodScale 0.5` - better model detail in distance
     - `r_lodScale 0` - best model detail in distance
+- Disabled VirtualStore folder redirection by checking for privileges
 
 # How to install (client on Windows)
 1. You need original Call of Duty 2 with version [1.3](https://www.moddb.com/games/call-of-duty-2/downloads/call-of-duty-2-pc-patch-v-13) installed.
-2. Download latest version of CoD2x - [CoD2x_1.4.4.5_windows.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.4.5/CoD2x_1.4.4.5_windows.zip)
+2. Download latest version of CoD2x - [CoD2x_1.4.4.6_windows.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.4.6/CoD2x_1.4.4.6_windows.zip)
 3. Extract these files from the archive to the Call of Duty 2 folder, replacing any existing file:
     - 📄 mss32.dll
     - 📄 mss32_original.dll
@@ -165,7 +167,7 @@ It focuses on fixing bugs and adding new features to the game.
 
 
 # How to install (server on Linux)
-1. Download latest version of CoD2x - [CoD2x_1.4.4.5_linux.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.4.5/CoD2x_1.4.4.5_linux.zip)
+1. Download latest version of CoD2x - [CoD2x_1.4.4.6_linux.zip](https://github.com/eyza-cod2/CoD2x/releases/download/v1.4.4.6/CoD2x_1.4.4.6_linux.zip)
 2. Extract this file from the archive to the Call of Duty 2 folder:
     - 📄 libCoD2x.so
 3. Final structure should look like this:
@@ -185,7 +187,38 @@ It focuses on fixing bugs and adding new features to the game.
 7. Auto-update is enabled by default. Make sure to enable UDP port 20720. If you want to disable auto-update, set `sv_update "0"` or disable UDP port 20720. On server start, the server will check for the latest version of CoD2x and download it if available. File libCoD2x.so will be replaced with the latest version. Process restart is needed to apply the update. 
 
 
+# Administrator rights
+Since version 1.4.4.6, the game does not require administrator rights to run if the game is located in folder outside of Program Files.
 
+If the game is located in Program Files, you need to run the game as administrator to avoid problems with VirtualStore folder.
+
+The VirtualStore folder is a feature introduced in Windows Vista and later to provide compatibility for legacy applications that try to write files to protected system locations, such as `C:\Program Files`. When a program without administrator rights attempts to write to these folders, Windows silently redirects the write operations to a user-specific location.
+
+This allows older applications to run without errors, but it can cause confusion because files may not be where the application or user expects them to be. For example, config files and IWD files might end up in the VirtualStore folder instead of the actual game directory.
+
+Possible locations for the game:
+- `C:\Program Files\Activision\Call of Duty 2`
+- `C:\Program Files (x86)\Activision\Call of Duty 2`
+- `C:\Users\<username>\AppData\Local\VirtualStore\Program Files\Activision\Call of Duty 2`
+- `C:\Users\<username>\AppData\Local\VirtualStore\Program Files (x86)\Activision\Call of Duty 2`
+
+Possible locations for the game in registry:
+- `HKEY_LOCAL_MACHINE\SOFTWARE\Activision\Call of Duty 2`
+- `HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Activision\Call of Duty 2`
+- `HKEY_CURRENT_USER\SOFTWARE\Classes\VirtualStore\MACHINE\SOFTWARE\Activision\Call of Duty 2`
+- `HKEY_CURRENT_USER\SOFTWARE\Classes\VirtualStore\MACHINE\SOFTWARE\Wow6432Node\Activision\Call of Duty 2`
+
+In CoD2x, we check for write access to the game folder on startup. If the game is located in Program Files and the user does not have write access, we show a error message box:
+![cod2-write-access-error](images/cod2-write-access-error.png)
+
+Running the game as administrator will fix this problem, but **it decreases the security of the system**. Thats why we recommend to move the game to a different folder, such as `C:\Games\Call of Duty 2` and uncheck the "Run as administrator" option and compatibility mode in the properties of the game executable, if possible.
+
+Why its recommended to uncheck also compatibility mode?
+Compatibility mode also runs the game with administrator rights.
+
+Try to run the game without administrator and compatibility mode first, and if it works without problems, you can leave it that way. If you encounter problems with the game, you can try to run the game with compatibility mode, but you decrease the security of your system.
+
+In registry, when the game runs with administrator rights, we are moving old values from VirtualStore to the original location, so the game always uses the latest saved values.
 
 
 
