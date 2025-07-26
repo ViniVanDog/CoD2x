@@ -7,6 +7,7 @@
 #include "shared.h"
 #include "admin.h"
 #include "registry.h"
+#include "url_protocol.h"
 #include "affinity.h"
 #include "hotreload.h"
 #include "exception.h"
@@ -215,6 +216,7 @@ void hook_Com_Init(const char* cmdline) {
     debug_init();
     admin_init();      // Must be called before file system initialization
     registry_init();   // Must be called before cdkey registry reading
+    url_protocol_init(); // Must be called before reading cmdline, so we can handle cod2x:// URL protocol
 
     // Call the original function
     if (!DLL_HOTRELOAD) {
