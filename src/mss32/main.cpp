@@ -222,6 +222,15 @@ bool main_getExeData() {
 
 
 
+
+    // Ensure CWD is set to the executable directory
+    if (!SetCurrentDirectoryA(EXE_DIRECTORY_PATH)) {
+        SHOW_ERROR_WITH_LAST_ERROR("Failed to set current directory");
+        return false;
+    }
+
+    
+
     // Get this DLL path
     HMODULE dllHandle = NULL;
     if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)&main_getExeData, &dllHandle)) {
