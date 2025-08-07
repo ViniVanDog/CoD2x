@@ -25,6 +25,7 @@ dvar_t*		sv_cracked;
 dvar_t*		showpacketstrings;
 dvar_t*		sv_playerBroadcastLimit;
 int 		nextIPTime = 0;
+dvar_t*		g_competitive;
 
 extern dvar_t* g_cod2x;
 
@@ -923,6 +924,10 @@ void server_init()
 
 	// Maximum number of players that will be sent to all clients, if there are more players, only visible players will be sent
 	sv_playerBroadcastLimit = Dvar_RegisterInt("sv_playerBroadcastLimit", 15, 0, 64, (dvarFlags_e)(DVAR_CHANGEABLE_RESET));
+
+	// Sets limits on client side for competitive settings
+	dvarFlags_e noWriteForClientFlag = (dedicated->value.integer == 0) ? DEBUG_RELEASE(DVAR_CHEAT, DVAR_NOWRITE) : DVAR_NOFLAG;
+	g_competitive = Dvar_RegisterBool("g_competitive", false, (enum dvarFlags_e)(noWriteForClientFlag | DVAR_SYSTEMINFO | DVAR_CHANGEABLE_RESET));
 
 
     Cmd_AddCommand("unbanAll", server_unbanAll_command);

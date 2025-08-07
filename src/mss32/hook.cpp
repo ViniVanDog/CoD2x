@@ -14,7 +14,7 @@
 #include "freeze.h"
 #include "window.h"
 #include "rinput.h"
-#include "fps.h"
+#include "competitive.h"
 #include "cgame.h"
 #include "updater.h"
 #include "hwid.h"
@@ -78,7 +78,7 @@ void hook_Com_Frame()
     // Only for client
     if (dedicated->value.integer == 0) {
         affinity_frame();
-        fps_frame();
+        competitive_frame();
         cgame_frame();
     }
 
@@ -161,7 +161,7 @@ void hook_CL_Init() {
     hwid_init(); 
     window_init();      // depends on being called before gfx dll is loaded
     rinput_init();
-    fps_init();
+    competitive_init();
     cgame_init();
     master_server_init();
     
@@ -264,7 +264,7 @@ bool hook_patch() {
     freeze_patch();
     window_patch();
     rinput_patch();
-    fps_patch();
+    competitive_patch();
     cgame_patch();
     updater_patch();
     master_server_patch();
