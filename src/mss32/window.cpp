@@ -103,10 +103,17 @@ void gamma_restore()
 bool gamma_update()
 {
     HWND hWnd = win_hwnd;
-    float gamma = r_gamma->value.decimal;
+    
+    // Get dvar by name to avoid error when renderer is not loaded (server)
+    dvar_t* gammaCvar = Dvar_GetDvarByName("r_gamma");
+    if (gammaCvar == nullptr) {
+        return true;
+    }
+    float gamma = gammaCvar->value.decimal;
+
 
     // Check window mode. If fullscreen, restore gamma and do nothing.
-    if (r_fullscreen->value.boolean)
+    if (r_fullscreen->value.boolean || win_hwnd == NULL)
     {
         gamma_restore();
         return true;
@@ -381,8 +388,12 @@ void Mouse_Loop()
         Mouse_ProcessMovement();
     }
 
+    // Get dvar by name to avoid error when renderer is not loaded (server)
+    dvar_t* gammaCvar = Dvar_GetDvarByName("r_gamma");
+    if (gammaCvar == nullptr)
+        return;
 
-    float gamma = r_gamma->value.decimal;
+    float gamma = gammaCvar->value.decimal;
     if (gamma != gamma_previous) {
         gamma_previous = gamma;
 
