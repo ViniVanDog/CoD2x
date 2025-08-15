@@ -62,7 +62,7 @@
             ],
             "problemMatcher": [],
             "dependsOn": [
-                "Build CoD2x Linux"
+                "Build Linux"
             ],
         },
 
