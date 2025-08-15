@@ -381,6 +381,9 @@ void Mouse_ProcessMovement() {
 // 00464b30
 void Mouse_Loop()
 {
+    if (!win_hwnd)
+        return;
+
     rinput_mouse_loop();
 
     if (mouse_isEnabled)
