@@ -16,13 +16,6 @@
 #include "../linux/updater.h"
 #endif
 
-
-#define svs_authorizeAddress 					(*((netaddr_s*)(ADDR(0x00d52770, 0x084400f0))))
-#define svs_challenges 							(*((challenge_t (*)[MAX_CHALLENGES])(ADDR(0x00d3575c, 0x084230dc))))
-#define svs_time 								(*((int*)(ADDR(0x00d35704, 0x08423084))))
-#define svs_nextHeartbeatTime 					(*((int*)(ADDR(0x00d35754, 0x084230d4))))
-#define svs_nextStatusResponseTime 				(*((int*)(ADDR(0x00d35758, 0x084230d8))))
-#define svs_clients 							(*((client_t (*)[64])(ADDR(0x00d3570c, 0x0842308c))))
 #define originalAuthorizeServerUrl 				((const char*)(ADDR(0x005a3c90, 0x08149afb)))
 
 #define MAX_MASTER_SERVERS  3
