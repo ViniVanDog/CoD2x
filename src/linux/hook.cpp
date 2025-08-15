@@ -8,6 +8,7 @@
 #include "../shared/server.h"
 #include "../shared/game.h"
 #include "../shared/animation.h"
+#include "../shared/gsc.h"
 #include "updater.h"
 
 
@@ -19,6 +20,8 @@ void __cdecl hook_Com_Frame() {
 
     // Call the original function
     ASM_CALL(RETURN_VOID, 0x080626f4);
+
+    gsc_frame(); 
 }
 
 
@@ -79,6 +82,7 @@ bool hook_patch() {
     game_patch();
     updater_patch();
     animation_patch();
+    gsc_patch();
 
     return true;
 }

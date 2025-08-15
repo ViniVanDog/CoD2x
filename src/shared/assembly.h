@@ -64,6 +64,9 @@ ASM_CALL(RETURN_VOID, 0x00434460, 1, EAX(var1), ECX(var2), PUSH(var3));
 #define ESI(var) ASM__mov("esi", var)
 #define PUSH(var) ASM__push(var)
 #define RETURN(var) ASM__movr(var, "eax")
+#define RETURN_SHORT(var) __asm__ volatile("movw %%ax, %0\n" : "=m"(var) : : "memory", "cc")
+#define RETURN_ST0_FLOAT(var) __asm__ volatile("fstps %0" : "=m"(var) : : "memory")
+#define RETURN_ST0_DOUBLE(var) __asm__ volatile("fstpl %0" : "=m"(var) : : "memory")
 #define RETURN_VOID
 
 // Push 32-bit word from a struct by offset.

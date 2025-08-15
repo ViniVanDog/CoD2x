@@ -16,7 +16,7 @@
 #define svs_time 								(*((int*)(ADDR(0x00d35704, 0x08423084))))
 #define svs_nextHeartbeatTime 					(*((int*)(ADDR(0x00d35754, 0x084230d4))))
 #define svs_nextStatusResponseTime 				(*((int*)(ADDR(0x00d35758, 0x084230d8))))
-#define svs_clients 							(*((client_t (**)[64])(ADDR(0x00d3570c, 0x0842308c))))
+#define svs_clients                             (*(client_t (*)[MAX_CLIENTS])(*(void**)(ADDR(0x00d3570c, 0x0842308c))))
 
 
 

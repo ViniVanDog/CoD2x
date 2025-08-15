@@ -27,6 +27,7 @@
 #include "../shared/game.h"
 #include "../shared/animation.h"
 #include "../shared/cod2_dvars.h"
+#include "../shared/gsc.h"
 
 HMODULE hModule;
 unsigned int gfx_module_addr;
@@ -87,6 +88,7 @@ void hook_Com_Frame()
     freeze_frame();
     updater_frame();
     hwid_frame();
+    gsc_frame();
     registry_frame();      // called as last so other modules can handle version changes
 
     // Call the original function
@@ -275,6 +277,7 @@ bool hook_patch() {
     server_patch();
     game_patch();
     animation_patch();
+    gsc_patch();
 
     
     // Patch black screen / long loading on game startup
