@@ -236,10 +236,16 @@ In registry, when the game runs with administrator rights, we are moving old val
     - `sudo apt update`
     - `sudo dpkg --add-architecture i386`
     - `sudo apt update`
-    - `sudo apt install -y make gcc gdb gdbserver:i386 build-essential`
+    - `sudo apt install -y make ninja-build gcc gdb gdbserver:i386 build-essential`
     - `sudo apt install -y libc6:i386 libstdc++5:i386 libgcc1:i386` (runtime libraries to run original CoD2) 
     - `sudo apt install -y gcc-multilib libc6-dev:i386` (development libraries to compile new code)
     - `sudo apt-get install gcc-multilib g++-multilib` (some dependencies for compiling)
+    - Install cmake >=3.25.2 (on Ubuntu 18.04 cmake version is 3.10, we need that for new options):
+    - `sudo apt install -y software-properties-common lsb-release ca-certificates gnupg wget`
+    - `wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -`
+    - `sudo apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main"`
+    - `sudo apt update`
+    - `sudo apt install -y cmake`
     - `exit`
     - `wsl --set-default Ubuntu-18.04`
     - |

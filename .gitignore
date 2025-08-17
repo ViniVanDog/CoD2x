@@ -4,6 +4,7 @@ tools/mingw/**
 
 # Ignore compiled files folder
 obj
+build
 
 # Ignore all files in CoD2 windows folder except for certain files
 bin/windows/*
