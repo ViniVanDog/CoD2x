@@ -55,12 +55,14 @@ endif
 CMAKE = cmake
 
 # Windows settings
-WIN_BUILD_DIR = build/win-$(BUILD_TYPE)
+WIN_BUILD_DIR = build\win-$(BUILD_TYPE)
+WIN_GAME_DIR  = bin\windows
 WIN_GENERATOR = "Ninja"
 WIN_TARGET    = mss32
 
 # Linux settings
 LINUX_BUILD_DIR = build/linux-$(BUILD_TYPE)
+LINUX_GAME_DIR  = bin/linux
 LINUX_GENERATOR = "Ninja"
 LINUX_TARGET    = linux
 
@@ -88,6 +90,14 @@ configure_win:
 
 build_win: prebuild configure_win
 	$(CMAKE) --build $(WIN_BUILD_DIR) --target $(WIN_TARGET) --parallel
+
+	@echo Renaming mss32.build.dll to mss32.dll + deleting old versions...
+	@del /Q "$(WIN_GAME_DIR)\mss32.dll*" >nul 2>&1
+	@del /Q "$(WIN_GAME_DIR)\mss32_hotreload_*.dll" >nul 2>&1
+	@cmd /Q /C "cd "$(WIN_GAME_DIR)" && for /L %i in (1,1,10) do if not exist mss32.dll.%i.old (ren mss32.dll mss32.dll.%i.old >nul 2>&1 & goto :done) & :done"
+	@move /Y "$(WIN_GAME_DIR)\mss32.build.dll" "$(WIN_GAME_DIR)\mss32.dll" >nul 2>&1
+	@echo Done.
+	@echo.
 
 clean_win:
 ifeq ($(OS),Windows_NT)

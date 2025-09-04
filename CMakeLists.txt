@@ -45,7 +45,7 @@ if (WIN32)
 
   set_target_properties(mss32 PROPERTIES
     PREFIX ""
-    OUTPUT_NAME "mss32"
+    OUTPUT_NAME "mss32.build"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/windows"
   )
 
