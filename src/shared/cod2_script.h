@@ -6,6 +6,8 @@
 #include "cod2_entity.h"
 #include <cstdint>
 
+#define level_finished (*(int*)ADDR(0x0193dd70, 0x0864f970)) // 1=map_restart(), 2=map(), 3=exitLevel() (map_rotate or fast_restart)
+#define level_savePersist (*(int*)ADDR(0x0193c4d4, 0x0864e0d4)) // set from GSC when calling exitLevel() or map_restart()
 
 typedef struct scr_entref_s
 {

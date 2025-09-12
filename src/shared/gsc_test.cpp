@@ -9,8 +9,8 @@
 #include "cod2_server.h"
 
 
-int codecallback_test = 0;
-int codecallback_test_player = 0;
+int codecallback_test_onStartGameType = 0;
+int codecallback_test_onPlayerConnect = 0;
 
 #if DEBUG
 
@@ -109,9 +109,9 @@ void gsc_test_getAll() {
 
 void gsc_test_onPlayerConnect(int entnum) {
 	#if DEBUG
-		if (codecallback_test_player && Scr_IsSystemActive())
+		if (codecallback_test_onPlayerConnect && Scr_IsSystemActive())
 		{
-			unsigned short thread_id = Scr_ExecEntThreadNum(g_entities[entnum].s.number, 0, codecallback_test_player, 0);
+			unsigned short thread_id = Scr_ExecEntThreadNum(g_entities[entnum].s.number, 0, codecallback_test_onPlayerConnect, 0);
 			Scr_FreeThread(thread_id);
 		}
 	#endif
@@ -119,10 +119,10 @@ void gsc_test_onPlayerConnect(int entnum) {
 
 void gsc_test_onStartGameType() {
 	#if DEBUG
-		if (codecallback_test && Scr_IsSystemActive())
+		if (codecallback_test_onStartGameType && Scr_IsSystemActive())
 		{
 			Scr_AddString("hello from CoD2x");
-			unsigned short thread_id = Scr_ExecThread(codecallback_test, 1);
+			unsigned short thread_id = Scr_ExecThread(codecallback_test_onStartGameType, 1);
 			Scr_FreeThread(thread_id);
 		}
 	#endif

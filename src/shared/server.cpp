@@ -9,6 +9,9 @@
 #include "cod2_server.h"
 #include "cod2_file.h"
 #include "cod2_entity.h"
+#include "cod2_script.h"
+#include "cod2_dvars.h"
+#include "gsc.h"
 #if COD2X_WIN32
 #include "../mss32/updater.h"
 #endif
@@ -26,6 +29,7 @@ dvar_t*		showpacketstrings;
 dvar_t*		sv_playerBroadcastLimit;
 int 		nextIPTime = 0;
 dvar_t*		g_competitive;
+bool		server_ignoreMapChangeThisFrame = false;
 
 extern dvar_t* g_cod2x;
 
@@ -844,9 +848,90 @@ void SV_ClientBegin_Linux(int clientNum) {
 
 
 
+/**
+ * Check if the server is in a state that allows for a map change or restart.
+ * Returns true to proceed, false to cancel the operation.
+ */
+bool server_beforeMapChangeOrRestart(bool isShutdown, sv_map_change_source_e source) {
+	if (sv_running && !sv_running->value.boolean) {
+		return true; // server is not running, allow map change/restart
+	}
+	
+	// Automatically proceed if the map is already changing
+	// This prevents multiple calls for map_rotate, which can call map()
+	if (server_ignoreMapChangeThisFrame) {
+		return true;
+	}
+	server_ignoreMapChangeThisFrame = true;
 
-// Called when the server is started via /map or /devmap, or /map_restart
+	bool fromScript = level_finished > 0; // 1=map_restart(), 2=map(), 3=exitLevel()
+	bool bComplete = !level_savePersist;  // set from GSC when calling exitLevel() or map_restart()
+
+	if (!gsc_beforeMapChangeOrRestart(fromScript, bComplete, isShutdown, source)) return false;	
+
+	return true;
+}
+
+bool cmd_map_called = false;
+bool cmd_map_canceled = false;
+
+// Command handler for "map" and "devmap", also called by GSC map()
+void cmd_map() {
+	cmd_map_canceled = false; // just in case
+	cmd_map_called = true;
+	bool sv_cheats = Dvar_GetDvarByName("sv_cheats")->value.boolean;
+
+	ASM_CALL(RETURN_VOID, ADDR(0x00451b60, 0x0808bd46), 0);
+
+	// Flag is still true, it means SV_SpawnServer was not called (dues to missing map, other error)
+	/*if (cmd_map_called == true) {
+		Com_DPrintf("cmd_map: SV_SpawnServer was not called (due to missing map or other error)\n");
+	}*/
+
+	// SV_SpawnServer was called, but the map change was canceled
+	if (cmd_map_canceled) {
+		// Change the sv_cheats back to original value (is called after SV_SpawnServer)
+		Dvar_SetBool(Dvar_GetDvarByName("sv_cheats"), sv_cheats);
+	}
+
+	cmd_map_canceled = false;
+	cmd_map_called = false;  // just in case
+}
+
+// Command handler for "fast_restart", also called by GSC map_restart()
+void cmd_fast_restart() {
+	if (!server_beforeMapChangeOrRestart(false, SV_MAP_CHANGE_SOURCE_FAST_RESTART)) return;
+	ASM_CALL(RETURN_VOID, ADDR(0x00451f40, 0x0808c0bc), 0);
+}
+
+// Command handler for "map_restart"
+void cmd_map_restart() {
+	if (!server_beforeMapChangeOrRestart(false, SV_MAP_CHANGE_SOURCE_MAP_RESTART)) return;
+	ASM_CALL(RETURN_VOID, ADDR(0x00451f30, 0x0808c0a8), 0);
+}
+
+// Command handler for "map_rotate", also called by GSC exitLevel()
+void cmd_map_rotate() {
+	if (!server_beforeMapChangeOrRestart(false, SV_MAP_CHANGE_SOURCE_MAP_ROTATE)) return;
+	ASM_CALL(RETURN_VOID, ADDR(0x00451fe0, 0x0808c132), 0);
+}
+
+
+
+
+
+/** Called when the server is started via /map or /devmap, or /map_restart */
 void SV_SpawnServer(char* mapname) {
+
+	if (cmd_map_called) {
+		cmd_map_called = false;
+
+		bool proceed = server_beforeMapChangeOrRestart(false, SV_MAP_CHANGE_SOURCE_MAP);
+		cmd_map_canceled = !proceed;
+
+		if (!proceed)
+			return;
+	}
 
     // Fix animation time from crouch to stand
     animation_changeFix(true);
@@ -863,6 +948,7 @@ void G_RunFrame(int time) {
     // Call the original function
     ASM_CALL(RETURN_VOID, ADDR(0x004fd1b0, 0x0810a13a), WL(0, 1), WL(EAX, PUSH)(time));
 
+	server_ignoreMapChangeThisFrame = false;
 
 	if (sv_playerBroadcastLimit->value.integer > 0) {
 
@@ -987,6 +1073,15 @@ void server_patch()
 	// Hook the SV_UserInfoChanged function
 	patch_call(ADDR(0x00454626, 0x0808eedb), (unsigned int)WL(SV_UserinfoChanged_Win32, SV_UserinfoChanged)); // SV_DirectConnect
 	patch_call(ADDR(0x00455c32, 0x08090a36), (unsigned int)WL(SV_UserinfoChanged_Win32, SV_UserinfoChanged)); // SV_UpdateUserinfo_f
+
+
+
+	// Hook the function for changing map
+	patch_int32(ADDR(0x00452adb + 1, 0x0808cdf0 + 4), (unsigned int)cmd_map); 			// Cmd_AddCommand("map", cmd_map);
+	patch_int32(ADDR(0x00452b23 + 1, 0x0808ce48 + 4), (unsigned int)cmd_map); 			// Cmd_AddCommand("devmap", cmd_map);
+	patch_int32(ADDR(0x00452acc + 1, 0x0808cddc + 4), (unsigned int)cmd_fast_restart); 	// Cmd_AddCommand("fast_restart", cmd_map);
+	patch_int32(ADDR(0x00452abd + 1, 0x0808cdc8 + 4), (unsigned int)cmd_map_restart); 	// Cmd_AddCommand("map_restart", cmd_map);
+	patch_int32(ADDR(0x00452af7 + 1, 0x0808ce20 + 4), (unsigned int)cmd_map_rotate); 	// Cmd_AddCommand("map_rotate", cmd_map);
 
 
 

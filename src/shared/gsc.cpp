@@ -10,6 +10,9 @@
 #include "cod2_server.h"
 #include "server.h"
 
+int codecallback_OnStopGameType = 0;
+
+
 // Array of custom methods for entities
 scr_method_t scriptMethods[] =
 {
@@ -44,6 +47,9 @@ callback_t callbacks[] =
 	{ &codecallback_test_onStartGameType, 			"_callback_tests", "callback_test_onStartGameType", true},
 	{ &codecallback_test_onPlayerConnect, 			"_callback_tests", "callback_test_onPlayerConnect", true},
 	#endif
+
+	// Callback to do any action before current level is exited after map change / restart / kill
+	{ &codecallback_OnStopGameType, 	"maps/mp/gametypes/_callbacksetup", "CodeCallback_StopGameType", false},
 };
 
 // This function is called when scripts are being compiled and function names are being resolved.
@@ -156,7 +162,33 @@ void Scr_ShutdownSystem_Win32(int bComplete) {
 }
 
 
+/**
+ * Called before a map change, restart or shutdown that can be triggered from a script or a command.
+ * Returns true to proceed, false to cancel the operation. Return value is ignored when shutdown is true.
+ * @param fromScript true if map change was triggered from a script, false if from a command.
+ * @param bComplete true if map change or restart is complete, false if it's a round restart so persistent variables are kept.
+ * @param shutdown true if the server is shutting down, false otherwise.
+ * @param source the source of the map change or restart.
+ */
+bool gsc_beforeMapChangeOrRestart(bool fromScript, bool bComplete, bool shutdown, sv_map_change_source_e source) {
 
+	// Call the OnStopGameType callback if it exists
+	if (codecallback_OnStopGameType && Scr_IsSystemActive())
+	{
+		// Convert source to string
+		const char* sourceStr = sv_map_change_source_to_string(source);
+
+		Com_DPrintf("------- StopGameType(fromScript: %d, bComplete: %d, shutdown: %d, source: %s) -------\n", fromScript, bComplete, shutdown, sourceStr);
+		Scr_AddString(sourceStr);
+		Scr_AddBool(shutdown);
+		Scr_AddBool(bComplete);
+		Scr_AddBool(fromScript);
+		unsigned short thread_id = Scr_ExecThread(codecallback_OnStopGameType, 3);
+		Scr_FreeThread(thread_id);
+	}
+
+	return true;
+}
 void gsc_frame() {
 }
 
