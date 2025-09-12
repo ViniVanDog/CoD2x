@@ -58,7 +58,7 @@ inline xfunction_t Scr_GetFunction(const char** v_functionName, qboolean* v_deve
 
 inline void Scr_Error( const char *error )
 {
-	ASM_CALL(RETURN_VOID, ADDR(0x00483aa0, 0x080853fc));
+	ASM_CALL(RETURN_VOID, ADDR(0x00483a80, 0x080853fc), 1, PUSH(error));
 }
 
 
