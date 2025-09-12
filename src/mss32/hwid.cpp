@@ -24,6 +24,8 @@
 #include "../shared/cod2_cmd.h"
 #include "../shared/cod2_client.h"
 
+#define HWID_TESTING 0 // (SET TO 0 AFTER TEST) enable generating random HWID for testing purposes
+
 dvar_t *cl_hwid;
 dvar_t *cl_hwid2;
 
@@ -900,9 +902,11 @@ void hwid_init()
             return;
         }
     }
-    
-    cl_hwid = Dvar_RegisterInt("cl_hwid", hwid_generate_short(), INT32_MIN, INT32_MAX, (dvarFlags_e)(DVAR_USERINFO | DVAR_NOWRITE));
-    cl_hwid2 = Dvar_RegisterString("cl_hwid2", hwid_generate_long(), (dvarFlags_e)(DVAR_USERINFO | DVAR_NOWRITE));
+
+    dvarFlags_e nowrite = HWID_TESTING ? DVAR_NOFLAG : DVAR_NOWRITE; // allow rewriting while testing
+
+    cl_hwid = Dvar_RegisterInt("cl_hwid", hwid_generate_short(), INT32_MIN, INT32_MAX, (dvarFlags_e)(DVAR_USERINFO | nowrite));
+    cl_hwid2 = Dvar_RegisterString("cl_hwid2", hwid_generate_long(), (dvarFlags_e)(DVAR_USERINFO | nowrite));
 
     hwid_generate_regid();
 }
