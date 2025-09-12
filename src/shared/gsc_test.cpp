@@ -1,4 +1,4 @@
-#include "gsc.h"
+#include "gsc_test.h"
 
 #include <stdarg.h> // va_list, va_start, va_end
 

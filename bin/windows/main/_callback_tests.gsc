@@ -1,4 +1,4 @@
-test_func(p1) {
+callback_test_onStartGameType(p1) {
     assertEx(p1 == "hello from CoD2x", "test_func should receive 'hello from CoD2x', got " + p1);
 
 
@@ -41,7 +41,7 @@ print_ok() {
 }
 
 
-test_onPlayerConnect() {
+callback_test_onPlayerConnect() {
     self endon("disconnect");
 
     println("=====================");

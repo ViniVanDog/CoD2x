@@ -8,7 +8,16 @@
 #include "cod2_script.h"
 #include "cod2_math.h"
 #include "cod2_server.h"
+#include "server.h"
 
+// Array of custom methods for entities
+scr_method_t scriptMethods[] =
+{
+	#if DEBUG
+	{"test_playerGetName", gsc_test_playerGetName, 0},
+	#endif
+
+};
 
 // Array of custom script functions
 scr_function_t scriptFunctions[] = {
@@ -28,22 +37,12 @@ scr_function_t scriptFunctions[] = {
 	{NULL, NULL, 0}
 };
 
-// Array of custom methods
-scr_method_t scriptMethods[] =
-{
-	#if DEBUG
-	{"test_playerGetName", gsc_test_playerGetName, 0},
-	#endif
-
-	{NULL, NULL, 0} // Terminator
-};
-
 // Array of custom callbacks
 callback_t callbacks[] =
 {
 	#if DEBUG
-	{ &codecallback_test, 			"_callback_tests", "test_func", true},
-	{ &codecallback_test_player, 	"_callback_tests", "test_onPlayerConnect", true},
+	{ &codecallback_test_onStartGameType, 			"_callback_tests", "callback_test_onStartGameType", true},
+	{ &codecallback_test_onPlayerConnect, 			"_callback_tests", "callback_test_onPlayerConnect", true},
 	#endif
 };
 
@@ -142,6 +141,21 @@ void GScr_LoadGameTypeScript() {
 	}
 }
 
+// Called on map restart / fast restart (bComplete is 1), and for gsc map restart with persist variables (bComplete is 0)
+void Scr_ShutdownSystem(uint8_t sys, int bComplete) {
+	Com_Printf("Shutting down script system (complete: %d)\n", bComplete);
+
+
+	WL(
+		ASM_CALL(RETURN_VOID, 0x00482870, 1, PUSH(bComplete)),
+		ASM_CALL(RETURN_VOID, 0x08084522, 2, PUSH(sys), PUSH(bComplete))
+	)
+}
+void Scr_ShutdownSystem_Win32(int bComplete) {
+	Scr_ShutdownSystem(0, bComplete);
+}
+
+
 
 void gsc_frame() {
 }
@@ -156,6 +170,7 @@ void gsc_patch()
     patch_call(ADDR(0x46E7BF, 0x08070BE7), (int)Scr_GetCustomFunction);
     patch_call(ADDR(0x46EA03, 0x08070E0B), (int)Scr_GetCustomMethod);
 	patch_call(ADDR(0x5043fa, 0x0811048c), (int)GScr_LoadGameTypeScript);
+	patch_call(ADDR(0x004fc874, 0x08109572), (int)WL(Scr_ShutdownSystem_Win32, Scr_ShutdownSystem));
 
 	WL(
 		patch_call(0x004fc79a, (unsigned int)CodeCallback_StartGameType_Win32),
