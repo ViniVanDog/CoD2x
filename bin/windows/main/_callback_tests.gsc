@@ -28,6 +28,18 @@ callback_test_onStartGameType(p1) {
 
     varstring = "variable test " + "string";
     test_getAll(true, 1, 2.222, varstring, &"Localized text string", (1, 2, 3), ::print_ok);
+
+
+    wait 1;
+
+
+    /****************************************************************************************************************************************************
+    * HTTP Fetch
+    ****************************************************************************************************************************************************/
+    //while(true) {
+    //    wait 0.001;
+        //http_fetch("http://localhost:8080/api/match/1234", "GET", "", "X-Auth-Token: your-secret-token\r\nHeader2: Value2", 1000, ::onHttpFetchDoneCallback, ::onHttpFetchErrorCallback);
+    //}
 }
 
 print_ok() {
@@ -62,3 +74,30 @@ callback_test_onPlayerConnect() {
     println("=====================");
     
 }
+
+
+
+
+/****************************************************************************************************************************************************
+* HTTP Fetch
+****************************************************************************************************************************************************/
+onHttpFetchDoneCallback(status, body, headers) {
+    println("=====================");
+    println("Script: HTTP Fetch Done Callback");
+    println("  Status: " + status);
+    println("  Body: " + body);
+    println("  Headers:");
+    for(i = 0; i < headers.size; i++) {
+        println("    " + headers[i]);
+    }
+    println("=====================");
+}
+onHttpFetchErrorCallback(error) {
+    println("=====================");
+    println("Script: HTTP Fetch Error Callback");
+    println("  Error: " + error);
+    println("=====================");
+}
+
+
+

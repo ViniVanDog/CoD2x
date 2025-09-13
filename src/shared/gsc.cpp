@@ -5,12 +5,16 @@
 #include "shared.h"
 #include "gsc_test.h"
 #include "gsc_match.h"
+#include "gsc_http.h"
 #include "cod2_common.h"
 #include "cod2_script.h"
 #include "cod2_math.h"
 #include "cod2_server.h"
 #include "server.h"
 #include "match.h"
+#include "http_client.h"
+
+
 
 int codecallback_OnStopGameType = 0;
 
@@ -43,6 +47,8 @@ scr_function_t scriptFunctions[] = {
 	{"test_getAll", gsc_test_getAll, 0},
 	{"test_allOk", gsc_test_allOk, 0},
 	#endif
+
+	{"http_fetch", gsc_http_fetch, 0},
 
 	{"matchUploadData", gsc_match_uploadData, 0},
 	{"matchSetData", gsc_match_setData, 0},
@@ -210,11 +216,15 @@ bool gsc_beforeMapChangeOrRestart(bool fromScript, bool bComplete, bool shutdown
 
 	return true;
 }
+
+/** Called every frame on frame start. */
 void gsc_frame() {
+	gsc_http_frame();
 }
 
 /** Called only once on game start after common inicialization. Used to initialize variables, cvars, etc. */
 void gsc_init() {
+	gsc_http_init();
 }
 
 /** Called before the entry point is called. Used to patch the memory. */
