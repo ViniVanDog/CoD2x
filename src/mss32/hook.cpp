@@ -29,6 +29,7 @@
 #include "../shared/animation.h"
 #include "../shared/cod2_dvars.h"
 #include "../shared/gsc.h"
+#include "../shared/match.h"
 
 HMODULE hModule;
 unsigned int gfx_module_addr;
@@ -90,6 +91,7 @@ void hook_Com_Frame()
     updater_frame();
     hwid_frame();
     gsc_frame();
+    match_frame();
     registry_frame();      // called as last so other modules can handle version changes
 
     // Call the original function
@@ -167,6 +169,7 @@ void hook_CL_Init() {
     competitive_init();
     cgame_init();
     master_server_init();
+    match_init_client();
     
     if (!DLL_HOTRELOAD) {
         ASM_CALL(RETURN_VOID, 0x00410a10);
@@ -197,6 +200,7 @@ void hook_SV_Init() {
     updater_init();
     game_init();
     animation_init();
+    match_init();
 
     if (!DLL_HOTRELOAD) {
         ASM_CALL(RETURN_VOID, 0x004596d0);

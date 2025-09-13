@@ -4,11 +4,13 @@
 
 #include "shared.h"
 #include "gsc_test.h"
+#include "gsc_match.h"
 #include "cod2_common.h"
 #include "cod2_script.h"
 #include "cod2_math.h"
 #include "cod2_server.h"
 #include "server.h"
+#include "match.h"
 
 int codecallback_OnStopGameType = 0;
 
@@ -20,6 +22,11 @@ scr_method_t scriptMethods[] =
 	{"test_playerGetName", gsc_test_playerGetName, 0},
 	#endif
 
+	{"matchPlayerGetData", gsc_match_playerGetData, 0},
+	{"matchPlayerSetData", gsc_match_playerSetData, 0},
+	{"matchPlayerIsAllowed", gsc_match_playerIsAllowed, 0},
+
+	{NULL, NULL, 0} // Terminator
 };
 
 // Array of custom script functions
@@ -37,6 +44,13 @@ scr_function_t scriptFunctions[] = {
 	{"test_allOk", gsc_test_allOk, 0},
 	#endif
 
+	{"matchUploadData", gsc_match_uploadData, 0},
+	{"matchSetData", gsc_match_setData, 0},
+	{"matchGetData", gsc_match_getData, 0},
+	{"matchRedownloadData", gsc_match_redownloadData, 0},
+	{"matchClearData", gsc_match_clearData, 0},
+	{"matchIsActivated", gsc_match_isActivated, 0},
+
 	{NULL, NULL, 0}
 };
 
@@ -46,6 +60,10 @@ callback_t callbacks[] =
 	#if DEBUG
 	{ &codecallback_test_onStartGameType, 			"_callback_tests", "callback_test_onStartGameType", true},
 	{ &codecallback_test_onPlayerConnect, 			"_callback_tests", "callback_test_onPlayerConnect", true},
+
+	{ &codecallback_test_match_onStartGameType, 	"_callback_match", "callback_match_onStartGameType", true},
+	{ &codecallback_test_match_onPlayerConnect, 	"_callback_match", "callback_match_onPlayerConnect", true},
+	{ &codecallback_test_match_onStopGameType, 		"_callback_match", "callback_match_onStopGameType", true},
 	#endif
 
 	// Callback to do any action before current level is exited after map change / restart / kill
@@ -103,6 +121,7 @@ xmethod_t Scr_GetCustomMethod(const char **fname, qboolean *fdev)
 // Called when CodeCallback_PlayerConnect is called
 void gsc_onPlayerConnect(int entnum) {
 	gsc_test_onPlayerConnect(entnum);
+	gsc_match_onPlayerConnect(entnum);
 }
 short CodeCallback_PlayerConnect_Win32(int entnum, int classnum, int paramcount) {
 	int handle; ASM( movr, handle, "eax" );
@@ -120,6 +139,8 @@ void CodeCallback_PlayerConnect_Linux(gentity_t *ent) {
 // Called when CodeCallback_StartGameType is called
 void gsc_onStartGameType() {
 	gsc_test_onStartGameType();
+	match_onStartGameType();
+	gsc_match_onStartGameType();
 }
 short CodeCallback_StartGameType_Win32(int paramcount) {
 	int handle; ASM( movr, handle, "eax" );

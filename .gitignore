@@ -31,7 +31,7 @@ bin/windows/*/
 # Ignore all files in main folder except for certain files
 bin/windows/main/*
 !bin/windows/main/launch_*.cfg
-!bin/windows/main/_callback_tests.gsc
+!bin/windows/main/_callback_*.gsc
 
 # Ignore all folders in main folder except for players
 bin/windows/main/*/

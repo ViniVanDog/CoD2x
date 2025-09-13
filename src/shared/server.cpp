@@ -12,6 +12,8 @@
 #include "cod2_script.h"
 #include "cod2_dvars.h"
 #include "gsc.h"
+#include "gsc_match.h"
+#include "match.h"
 #if COD2X_WIN32
 #include "../mss32/updater.h"
 #endif
@@ -867,7 +869,9 @@ bool server_beforeMapChangeOrRestart(bool isShutdown, sv_map_change_source_e sou
 	bool fromScript = level_finished > 0; // 1=map_restart(), 2=map(), 3=exitLevel()
 	bool bComplete = !level_savePersist;  // set from GSC when calling exitLevel() or map_restart()
 
+	if (!gsc_match_beforeMapChangeOrRestart(fromScript, bComplete, isShutdown, source)) return false; // must be called first, because it can block the map change/restart
 	if (!gsc_beforeMapChangeOrRestart(fromScript, bComplete, isShutdown, source)) return false;	
+	if (!match_beforeMapChangeOrRestart(fromScript, bComplete, isShutdown, source)) return false;
 
 	return true;
 }
@@ -940,6 +944,20 @@ void SV_SpawnServer(char* mapname) {
     ((void (*)(char* mapname))ADDR(0x00458a40, 0x08093520))(mapname);
 
 	nextIPTime = svs_time + 4000; // Ask for IP and port of this server in 4 seconds
+}
+
+
+
+/** Called on /quit, /killserver or other server shutdown reason. Is called also for client when disconnects */
+void SV_Shutdown(const char* error) {
+	Com_DPrintf("SV_Shutdown(%s)\n", error);
+
+	if (sv_running && sv_running->value.boolean) {
+		server_beforeMapChangeOrRestart(true, SV_MAP_CHANGE_SOURCE_MAP_SHUTDOWN);
+	}
+
+	// Call the original function
+	ASM_CALL(RETURN_VOID, ADDR(0x0045a130, 0x080942f8), 1, PUSH(error));
 }
 
 
@@ -1057,6 +1075,9 @@ void server_patch()
     // Hook the SV_SpawnServer function
     patch_call(ADDR(0x00451c7f, 0x0808be22), (unsigned int)SV_SpawnServer); // map / devmap
     patch_call(ADDR(0x00451f1c, 0x0808befa), (unsigned int)SV_SpawnServer); // map_restart
+
+    patch_call(ADDR(0x00432737, 0x08061271), (unsigned int)SV_Shutdown); // Com_Quit_f
+    patch_call(ADDR(0x00432011, 0x08060eac), (unsigned int)SV_Shutdown); // Com_ShutdownInternal
 
 
     // Hook the SV_ClientBegin function
