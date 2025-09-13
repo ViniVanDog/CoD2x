@@ -16,7 +16,7 @@
 #define r_fullscreen                (*((dvar_t**)0x00d77128))
 #define r_autopriority              (*((dvar_t**)0x00d77130))
 #define in_mouse                    (*((dvar_t**)0x00d52a4c))
-#define cl_bypassMouseInput         (*((dvar_t**)0x006067d0))
+#define cl_bypassMouseInput         (*((dvar_t**)0x006067d0))   // 1 = control ingame mouse movement even if menu is opened
 
 #define r_mode                      (*((dvar_t**)(gfx_module_addr + 0x001ce688)))
 #define r_displayRefresh            (*((dvar_t**)(gfx_module_addr + 0x001ce804)))
@@ -48,6 +48,7 @@
 #define clientState                 (*((clientState_e*)0x00609fe0))
 
 dvar_t* m_debug;
+dvar_t* m_enable = NULL;    // 1 = allow moving ingame and menu mouse cursor; 0 = bypass mouse movement, but still process the system cursor and mouse events
 
 int minWidth = 0;
 int minHeight = 0;
@@ -217,6 +218,7 @@ void Mouse_ActivateIngameCursor()
 
 
 void Mouse_SetMenuCursorPos(int x, int y) {
+
     menu_cursorX = x;
     menu_cursorY = y;
 
@@ -239,8 +241,8 @@ void Mouse_ProcessMovement() {
     RECT clientRect;
     GetClientRect(win_hwnd, &clientRect); // Get the inner area of the window
 
-
-    bool in_menu = ((input_mode & 8) != 0 && !cl_bypassMouseInput->value.boolean) || clientState < CLIENT_STATE_ACTIVE;
+    // in_menu = if we control menu cursor
+    bool in_menu = ((input_mode & 8) != 0 && !cl_bypassMouseInput->value.boolean && m_enable->value.boolean) || clientState < CLIENT_STATE_PRIMED;
     bool menu_changed = in_menu != in_menu_last;
     in_menu_last = in_menu;
 
@@ -353,6 +355,11 @@ void Mouse_ProcessMovement() {
 
         if (m_debug->value.boolean && (x_offset != 0 || y_offset != 0))
             Com_Printf("Mouse move offset: (%d %d) (source: %s)\n", x_offset, y_offset, rinput_is_enabled() ? "rinput" : "system");
+
+        // Mouse movement is bypassed
+        if (!m_enable->value.boolean) {
+            return;
+        }
 
         if (in_menu) {
 
@@ -687,7 +694,8 @@ void window_init() {
     vid_ypos = Dvar_RegisterInt("vid_ypos", 22, -100000, 100000, (enum dvarFlags_e)(DVAR_ARCHIVE | DVAR_CHANGEABLE_RESET));
     r_fullscreen = Dvar_RegisterBool("r_fullscreen", true, (enum dvarFlags_e)(DVAR_ARCHIVE | DVAR_LATCH | DVAR_CHANGEABLE_RESET));
     r_autopriority = Dvar_RegisterBool("r_autopriority", false, (enum dvarFlags_e)(DVAR_ARCHIVE | DVAR_CHANGEABLE_RESET));
-
+    
+    m_enable = Dvar_RegisterBool("m_enable", true, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
     m_debug = Dvar_RegisterBool("m_debug", false, (enum dvarFlags_e)(DVAR_CHANGEABLE_RESET));
 }
 
