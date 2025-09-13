@@ -1,5 +1,6 @@
 #include "hook.h"
 
+#include <winsock2.h> // must be called before windows.h to fix warning about winsock2.h
 #include <windows.h>
 #include <stdio.h>
 #include <string.h>

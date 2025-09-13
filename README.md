@@ -238,6 +238,7 @@ In registry, when the game runs with administrator rights, we are moving old val
     - `sudo apt update`
     - `sudo apt install -y make ninja-build gcc gdb gdbserver:i386 build-essential`
     - `sudo apt install -y libc6:i386 libstdc++5:i386 libgcc1:i386` (runtime libraries to run original CoD2) 
+    - `sudo apt install -y libssl-dev:i386` (development libraries for OpenSSL)
     - `sudo apt install -y gcc-multilib libc6-dev:i386` (development libraries to compile new code)
     - `sudo apt-get install gcc-multilib g++-multilib` (some dependencies for compiling)
     - Install cmake >=3.25.2 (on Ubuntu 18.04 cmake version is 3.10, we need that for new options):

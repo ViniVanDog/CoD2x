@@ -43,17 +43,26 @@ if (WIN32)
     ${SHARED_SRC}
   )
 
+  target_compile_features(mss32 PRIVATE cxx_std_17)
+
   set_target_properties(mss32 PROPERTIES
     PREFIX ""
     OUTPUT_NAME "mss32.build"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/windows"
   )
 
+  target_include_directories(mss32 PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/shared"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/mss32"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/openssl_mingw/include/"
+  )
+
   # Per-language compile options, with DEBUG=1 defined in Debug mode
   target_compile_options(mss32 PRIVATE
     $<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:
         -Wall -Wextra -Wno-unused-parameter -Wno-address-of-packed-member
-        -g -m32 -msse -O0 -DCJSON_CDECL=__cdecl
+        -g -m32 -msse -O0 
+        -DCJSON_CDECL=__cdecl -DMG_TLS=MG_TLS_OPENSSL
         -fdiagnostics-color=always
         $<$<CONFIG:Debug>:-DDEBUG=1>
     >
@@ -64,8 +73,13 @@ if (WIN32)
 
   target_link_libraries(mss32 PRIVATE
     kernel32 wininet dbghelp ole32 oleaut32 uuid gdi32
-    -static-libgcc -static-libstdc++ stdc++
+    "${CMAKE_SOURCE_DIR}/tools/openssl_mingw/lib/libssl.a"
+    "${CMAKE_SOURCE_DIR}/tools/openssl_mingw/lib/libcrypto.a"
+    ws2_32 crypt32
+    -static-libgcc -static-libstdc++ -static pthread stdc++
   )
+
+  
 
   # Optional strip after link (for release packaging)
   if (CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -97,6 +111,8 @@ if (UNIX AND NOT WIN32)
     ${SHARED_SRC}
   )
 
+  target_compile_features(linux PRIVATE cxx_std_17)
+
   message(STATUS "Found Linux source files: ${LNX_CC}")
 
   set_target_properties(linux PROPERTIES
@@ -113,6 +129,7 @@ if (UNIX AND NOT WIN32)
   target_compile_options(linux PRIVATE
     -Wall -Wextra -Wno-unused-parameter
     -g -m32 -msse -O0 -fPIC
+    -DMG_TLS=MG_TLS_OPENSSL
     -fdiagnostics-color=always
     $<$<CONFIG:Debug>:-DDEBUG=1>
   )
@@ -120,7 +137,9 @@ if (UNIX AND NOT WIN32)
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -m32 -shared -static-libgcc -static-libstdc++")
 
   target_link_libraries(linux PRIVATE
-    -ldl -pthread
+    /usr/lib/i386-linux-gnu/libssl.a
+    /usr/lib/i386-linux-gnu/libcrypto.a
+    dl pthread
   )
 
 endif()
