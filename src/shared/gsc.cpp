@@ -7,6 +7,7 @@
 #include "gsc_match.h"
 #include "gsc_http.h"
 #include "gsc_websocket.h"
+#include "gsc_player.h"
 #include "cod2_common.h"
 #include "cod2_script.h"
 #include "cod2_math.h"
@@ -26,6 +27,8 @@ scr_method_t scriptMethods[] =
 	#if DEBUG
 	{"test_playerGetName", gsc_test_playerGetName, 0},
 	#endif
+
+	{"getHWID", gsc_player_playerGetHWID, 0},
 
 	{"matchPlayerGetData", gsc_match_playerGetData, 0},
 	{"matchPlayerSetData", gsc_match_playerSetData, 0},
@@ -182,7 +185,6 @@ void GScr_LoadGameTypeScript() {
 // Called on map restart / fast restart (bComplete is 1), and for gsc map restart with persist variables (bComplete is 0)
 void Scr_ShutdownSystem(uint8_t sys, int bComplete) {
 	Com_Printf("Shutting down script system (complete: %d)\n", bComplete);
-
 
 	WL(
 		ASM_CALL(RETURN_VOID, 0x00482870, 1, PUSH(bComplete)),
