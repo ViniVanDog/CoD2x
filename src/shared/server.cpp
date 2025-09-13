@@ -224,14 +224,26 @@ void SV_DirectConnect(netaddr_s addr)
     }
 
 
-	int hwid = atoi(Info_ValueForKey(str, "cl_hwid"));
+	// Require HWID2
+	char* hwid2 = Info_ValueForKey(str, "cl_hwid2");
 
-	if (hwid == 0)
+	if (hwid2 == NULL || strlen(hwid2) != 32)
 	{
-		Com_Printf("rejected connection from client without HWID\n");
-		NET_OutOfBandPrint(NS_SERVER, addr, "error\n\x15You have invalid HWID");
+		Com_Printf("rejected connection from client without HWID2\n");
+		NET_OutOfBandPrint(NS_SERVER, addr, "error\n\x15You have invalid HWID2");
 		return;
 	}
+
+    // Compute 32bit hash from HWID2 using FVN-1a algorithm
+    uint32_t hash = 2166136261u;
+    while (*hwid2) {
+        hash ^= (unsigned char)(*hwid2++);
+        hash *= 16777619;
+    }
+	if (hash == 0) hash = 1; // avoid returning zero
+	int hwid = *(int*)&hash;
+
+
 
 	int challenge = atoi( Info_ValueForKey( str, "challenge" ) );
 
@@ -269,6 +281,7 @@ void SV_DirectConnect(netaddr_s addr)
 		memset( &svs_challenges[i], 0, sizeof( svs_challenges[i]));
 		return;
 	}
+
 
 
     // Call the original function
