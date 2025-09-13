@@ -14,6 +14,7 @@
 #include "gsc.h"
 #include "gsc_match.h"
 #include "gsc_http.h"
+#include "gsc_websocket.h"
 #include "match.h"
 #if COD2X_WIN32
 #include "../mss32/updater.h"
@@ -872,6 +873,7 @@ bool server_beforeMapChangeOrRestart(bool isShutdown, sv_map_change_source_e sou
 
 	if (!gsc_match_beforeMapChangeOrRestart(fromScript, bComplete, isShutdown, source)) return false; // must be called first, because it can block the map change/restart
 	if (!gsc_http_beforeMapChangeOrRestart(fromScript, bComplete, isShutdown, source)) return false;
+	if (!gsc_websocket_beforeMapChangeOrRestart(fromScript, bComplete, isShutdown, source)) return false;
 	if (!gsc_beforeMapChangeOrRestart(fromScript, bComplete, isShutdown, source)) return false;	
 	if (!match_beforeMapChangeOrRestart(fromScript, bComplete, isShutdown, source)) return false;
 

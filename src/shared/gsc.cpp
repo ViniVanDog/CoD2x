@@ -6,6 +6,7 @@
 #include "gsc_test.h"
 #include "gsc_match.h"
 #include "gsc_http.h"
+#include "gsc_websocket.h"
 #include "cod2_common.h"
 #include "cod2_script.h"
 #include "cod2_math.h"
@@ -49,6 +50,10 @@ scr_function_t scriptFunctions[] = {
 	#endif
 
 	{"http_fetch", gsc_http_fetch, 0},
+
+	{"websocket_connect", gsc_websocket_connect, 0},
+	{"websocket_sendText", gsc_websocket_sendText, 0},
+	{"websocket_close", gsc_websocket_close, 0},
 
 	{"matchUploadData", gsc_match_uploadData, 0},
 	{"matchSetData", gsc_match_setData, 0},
@@ -220,11 +225,13 @@ bool gsc_beforeMapChangeOrRestart(bool fromScript, bool bComplete, bool shutdown
 /** Called every frame on frame start. */
 void gsc_frame() {
 	gsc_http_frame();
+	gsc_websocket_frame();
 }
 
 /** Called only once on game start after common inicialization. Used to initialize variables, cvars, etc. */
 void gsc_init() {
 	gsc_http_init();
+	gsc_websocket_init();
 }
 
 /** Called before the entry point is called. Used to patch the memory. */

@@ -40,6 +40,17 @@ callback_test_onStartGameType(p1) {
     //    wait 0.001;
         //http_fetch("http://localhost:8080/api/match/1234", "GET", "", "X-Auth-Token: your-secret-token\r\nHeader2: Value2", 1000, ::onHttpFetchDoneCallback, ::onHttpFetchErrorCallback);
     //}
+
+
+
+    /****************************************************************************************************************************************************
+    * Websocket
+    ****************************************************************************************************************************************************/
+    // Websocket test
+    /*if (!isDefined(game["ws_connection_id"])) {
+        game["ws_connection_id"] = websocket_connect("ws://localhost:8080/ws", "", ::onWebSocketConnect, ::onWebSocketMessage, ::onWebSocketClose, ::onWebSocketError);
+    }
+    thread websocket_test_thread();*/
 }
 
 print_ok() {
@@ -101,3 +112,41 @@ onHttpFetchErrorCallback(error) {
 
 
 
+
+
+/****************************************************************************************************************************************************
+* Websocket
+****************************************************************************************************************************************************/
+onWebSocketConnect() {
+    println("Script: WebSocket #" + game["ws_connection_id"] + " connected");
+}
+onWebSocketMessage(message) {
+    println("Script: WebSocket #" + game["ws_connection_id"] + " message received: " + message);
+}
+// IS called when connection is closed by remote, by calling websocket_close(), by client if remote is not responding to pings, or on error
+onWebSocketClose(isClosedByRemote, isFullyDisconnected) {
+    println("Script: WebSocket #" + game["ws_connection_id"] + " closed, isClosedByRemote: " + isClosedByRemote + ", isFullyDisconnected: " + isFullyDisconnected);
+    if (isFullyDisconnected)
+        game["ws_connection_id"] = -1;
+}
+onWebSocketError(error) {
+    println("Script: WebSocket #" + game["ws_connection_id"] + " error: " + error);
+}
+websocket_test_thread() {
+    i = 0;
+    for(;;) {
+        wait 0.001;
+        if (game["ws_connection_id"] >= 0) {
+            websocket_sendText(game["ws_connection_id"], "Hello from CoD2x GSC at " + i);
+
+            if (getCvar("ws") == "close") {
+                websocket_close(game["ws_connection_id"]);
+                setCvar("ws", "");
+            } else if (getCvar("ws") == "send") {
+                websocket_sendText(game["ws_connection_id"], "Hello from CoD2x GSC at " + i);
+                setCvar("ws", "");
+            }
+        }
+        i++;
+    }
+}
