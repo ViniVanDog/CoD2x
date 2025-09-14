@@ -84,6 +84,17 @@ callback_test_onPlayerConnect() {
     println("Script: Player name from CoD2x: " + name);
     println("=====================");
     
+    /****************************************************************************************************************************************************
+    * Player
+    ****************************************************************************************************************************************************/
+    println("=====================");
+    println("Player: ");
+    println("  - Name: " + self.name);
+    println("  - GUID: " + self getGuid());
+    println("  - HWID: " + self getHwid());
+    println("  - CDKeyHash: " + self getCDKeyHash());
+    println("  - AuthorizationStatus: " + self getAuthorizationStatus());
+    println("=====================");
 }
 
 
