@@ -19,6 +19,7 @@
 #include "cgame.h"
 #include "updater.h"
 #include "hwid.h"
+#include "drawing.h"
 #include "master_server.h"
 #include "error.h"
 #include "downloading.h"
@@ -93,6 +94,7 @@ void hook_Com_Frame()
     gsc_frame();
     match_frame();
     registry_frame();      // called as last so other modules can handle version changes
+    drawing_frame();
 
     // Call the original function
     ASM_CALL(RETURN_VOID, 0x00434f70);
@@ -170,6 +172,7 @@ void hook_CL_Init() {
     cgame_init();
     master_server_init();
     match_init_client();
+    drawing_init();
     
     if (!DLL_HOTRELOAD) {
         ASM_CALL(RETURN_VOID, 0x00410a10);
@@ -277,6 +280,7 @@ bool hook_patch() {
     updater_patch();
     master_server_patch();
     downloading_patch();
+    drawing_patch();
 
     // Patch server side
     common_patch();

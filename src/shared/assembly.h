@@ -156,6 +156,19 @@ ASM_CALL(RETURN_VOID, 0x00434460, 1, EAX(var1), ECX(var2), PUSH(var3));
     GET_ASM_CALL_MACRO(__VA_ARGS__, \
         ASM_CALL_13, ASM_CALL_12, ASM_CALL_11, ASM_CALL_10, ASM_CALL_9, ASM_CALL_8, ASM_CALL_7, ASM_CALL_6, ASM_CALL_5, ASM_CALL_4, ASM_CALL_3, ASM_CALL_2, ASM_CALL_1, ASM_CALL_0)(__VA_ARGS__)
 
+/**
+ * Call a function with a variable number of arguments and return the value.
+ * 
+ * Example:
+ * - `inline materialHandle_t* CG_RegisterMaterial(const char* name, materialType_e type) {`
+ * - `   ASM_CALL_RETURN(materialHandle_t*, 0x00402160, 0, ECX(name), EAX(type))`
+ * - `}`
+ * 
+ */
+#define ASM_CALL_RETURN(type, ...) \
+    type _variable_to_return; \
+    ASM_CALL(RETURN(_variable_to_return), __VA_ARGS__) \
+    return _variable_to_return;
 
         
 // Make structure packed - remove paddding, ensure that the structure is aligned to 1 byte

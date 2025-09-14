@@ -139,5 +139,9 @@ inline dvar_t* Dvar_GetDvarByName(const char* name) {
     return ((dvar_t* (__cdecl*)(const char*))ADDR(0x004373a0, 0x080b2e54))(name);
 }
 
+inline void Dvar_StringToColor(struct dvar_s* dvar, float (*vec4)[4]) {
+    ASM_CALL(RETURN_VOID, 0x00437640, 0, EAX(dvar), EDI(vec4));
+}
+
 
 #endif
