@@ -29,6 +29,8 @@ scr_method_t scriptMethods[] =
 	#endif
 
 	{"getHWID", gsc_player_playerGetHWID, 0},
+	{"getCDKeyHash", gsc_player_playerGetCDKeyHash, 0},
+	{"getAuthorizationStatus", gsc_player_playerGetAuthorizationStatus, 0},
 
 	{"matchPlayerGetData", gsc_match_playerGetData, 0},
 	{"matchPlayerSetData", gsc_match_playerSetData, 0},

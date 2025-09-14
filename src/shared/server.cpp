@@ -443,6 +443,8 @@ void SV_AuthorizeIpPacket( netaddr_s from )
 	int i;
 	const char    *response;
 	const char    *info;
+	//const char    *guid;
+	//const char    *PBguid;
 	char ret[1024];
 
 	if (NET_CompareBaseAdrSigned(&from, &svs_authorizeAddress ) != 0)
@@ -468,8 +470,20 @@ void SV_AuthorizeIpPacket( netaddr_s from )
 	// send a packet back to the original client
 	svs_challenges[i].pingTime = svs_time;
 
-	response = Cmd_Argv( 2 );
-	info = Cmd_Argv( 3 );
+	response = Cmd_Argv( 2 ); // accept or deny
+	info = Cmd_Argv( 3 ); // KEY_IS_GOOD
+	//guid = Cmd_Argv( 4 ); // 32bit number
+	//PBguid = Cmd_Argv( 5 ); // MD5 hash
+
+	// Save PBguid
+	#if 0
+	strncpy(svs_challenges[i].PBguid, PBguid, 32);
+	svs_challenges[i].PBguid[32] = '\0';
+	#endif
+
+	// CoD2x: We dont care about MD5 hash coming from authorization server, we will save the info status instead
+	strncpy(svs_challenges[i].PBguid, info, 32);
+	svs_challenges[i].PBguid[32] = '\0';
 
     // CoD2x: Cracked server
 	if (sv_cracked->value.boolean)
@@ -505,7 +519,7 @@ void SV_AuthorizeIpPacket( netaddr_s from )
 	{
 		// CoD2x: GUID from authorization server is replaced by HWID - guid is writed in SV_DirectConnect
 		#if 0
-		svs_challenges[i].guid = atoi(Cmd_Argv( 4 ));
+		svs_challenges[i].guid = atoi(guid);
 
 		if (SV_IsBannedGuid(svs_challenges[i].guid) )
 		{
@@ -619,6 +633,14 @@ void SV_GetChallenge( netaddr_s from )
 		i = oldest;
 	}
 
+	// Save CDKEY hash from client
+	const char* PBHASH = NULL;
+	if (Cmd_Argc() == 3) {
+		PBHASH = Cmd_Argv( 2 );
+		strncpy(challenge->clientPBguid, PBHASH, sizeof(challenge->clientPBguid));
+		challenge->clientPBguid[sizeof(challenge->clientPBguid) - 1] = '\0';
+	}
+
 	// if they are on a lan address, send the challengeResponse immediately
 	if ( !net_lanauthorize->value.boolean && Sys_IsLANAddress(from) )
 	{
@@ -658,13 +680,6 @@ void SV_GetChallenge( netaddr_s from )
 
 			return;
 		}
-	}
-
-	const char* PBHASH = NULL;
-	if (Cmd_Argc() == 3) {
-		PBHASH = Cmd_Argv( 2 );
-		strncpy(challenge->clientPBguid, PBHASH, sizeof(challenge->clientPBguid));
-		challenge->clientPBguid[sizeof(challenge->clientPBguid) - 1] = '\0';
 	}
 
 	// otherwise send their ip to the authorize server
