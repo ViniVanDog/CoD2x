@@ -195,6 +195,19 @@ src/mss32/version.rc: makefile
 endif
 
 
+# ========================================================================================================
+# Create .cpp and .h template
+# ========================================================================================================
+# Depend on the files to not overwrite existing files
+template: $(DIR)/$(CLASSNAME).h $(DIR)/$(CLASSNAME).cpp
+
+$(DIR)/$(CLASSNAME).h $(DIR)/$(CLASSNAME).cpp: src/_template.h.in src/_template.cpp.in
+	@powershell -Command "Get-Content src/_template.h.in | ForEach-Object { $$_ -replace '@CLASSNAME@','$(CLASSNAME)' }" > $(DIR)/$(CLASSNAME).h
+	@powershell -Command "Get-Content src/_template.cpp.in | ForEach-Object { $$_ -replace '@CLASSNAME@','$(CLASSNAME)' }" > $(DIR)/$(CLASSNAME).cpp
+	@echo Created $(DIR)/$(CLASSNAME).h and $(DIR)/$(CLASSNAME).cpp
+	
+	@code --reuse-window $(DIR)/$(CLASSNAME).cpp
+
 
 # ========================================================================================================
 # Ziping

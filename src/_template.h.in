@@ -1,5 +1,5 @@
-#ifndef TEMPLATE_H
-#define TEMPLATE_H
+#ifndef @CLASSNAME@_H
+#define @CLASSNAME@_H
 
 // [DELETEME] Include system headers
 #include <iostream>
@@ -8,8 +8,8 @@
 // [DELETEME] Include shared headers
 #include "shared.h"
 
-void template_frame();
-void template_init();
-void template_patch();
+void @CLASSNAME@_frame();
+void @CLASSNAME@_init();
+void @CLASSNAME@_patch();
 
 #endif

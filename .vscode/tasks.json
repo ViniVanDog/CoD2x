@@ -93,5 +93,40 @@
             "hide": true,
 
         },
-    ]
+
+        {
+            "label": "New C++ Template",
+            "type": "shell",
+            "command": "mingw32-make.exe",
+            "args": [
+                "template",
+                "CLASSNAME=${input:className}",
+                "DIR=${input:dir}"
+            ],
+            "problemMatcher": [],
+            "options": {
+                "env": {
+                    "PATH": "${workspaceFolder}/tools/mingw/bin;${env:PATH}"
+                }
+            }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "dir",
+            "type": "pickString",
+            "description": "Select target folder",
+            "options": [
+                "src/mss32",
+                "src/linux",
+                "src/shared"
+            ],
+            "default": "shared"
+        },
+        {
+            "id": "className",
+            "type": "promptString",
+            "description": "Enter file base name (without extension)"
+        }
+    ],
 }
