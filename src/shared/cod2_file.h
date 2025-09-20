@@ -29,6 +29,12 @@ inline bool FS_Delete(const char *filename)
     return ret;
 }
 
+inline bool FS_FreeFile(void* buffer) {
+    int ret;
+    ASM_CALL(RETURN(ret), ADDR(0x004232f0, 0x080a0b8a), 1, PUSH(buffer));
+    return ret;
+}
+
 inline int FS_FilenameCompare(const char *s1, const char *s2)
 {
     int ret;

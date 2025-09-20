@@ -60,5 +60,16 @@ inline int Com_DPrintf(const char* format, ...) {
     return ((int(__cdecl*)(const char*, const char*))(ADDR(0x00431f30, 0x08060e3a)))("%s", buffer);
 }
 
+/**
+ * The returned token points to within the original buffer.
+ * Repeated calls to Com_Parse will extract subsequent tokens from the buffer.
+ */
+inline char *Com_Parse(const char **data_p)
+{
+    char *ret;
+    ASM_CALL(RETURN(ret), ADDR(0x00449850, 0x080b6db2), WL(0, 1), WL(ECX, PUSH)(data_p));
+    return ret;
+}
+
 
 #endif

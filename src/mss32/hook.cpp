@@ -19,6 +19,7 @@
 #include "cgame.h"
 #include "updater.h"
 #include "hwid.h"
+#include "radar.h"
 #include "drawing.h"
 #include "master_server.h"
 #include "error.h"
@@ -72,8 +73,11 @@ void hook_Com_Frame()
         // New DLL is requested to be loaded, unload the old one and load the new one
         if (hotreload_requested) {
             
+            // Unloading
             hotreload_unload();
             debug_unload();
+
+            radar_unload();
 
             hotreload_loadDLL();
             return;
@@ -97,6 +101,7 @@ void hook_Com_Frame()
     registry_frame();      // called as last so other modules can handle version changes
     drawing_frame();
     iwd_frame();
+    radar_frame();
 
     // Call the original function
     ASM_CALL(RETURN_VOID, 0x00434f70);
@@ -175,6 +180,7 @@ void hook_CL_Init() {
     master_server_init();
     match_init_client();
     drawing_init();
+    radar_init();
     
     if (!DLL_HOTRELOAD) {
         ASM_CALL(RETURN_VOID, 0x00410a10);
@@ -283,6 +289,7 @@ bool hook_patch() {
     master_server_patch();
     downloading_patch();
     drawing_patch();
+    radar_patch();
 
     // Patch server side
     common_patch();

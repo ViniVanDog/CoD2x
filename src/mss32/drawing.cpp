@@ -3,6 +3,7 @@
 #include "shared.h"
 #include "../shared/cod2_dvars.h"
 #include "../shared/cod2_client.h"
+#include "radar.h"
 
 vec4_t colWhite			    = { 1, 1, 1, 1 };
 vec4_t colBlack			    = { 0, 0, 0, 1 };
@@ -81,6 +82,8 @@ void CG_DrawCompassFriendlies(compass_hud_data* data, vec4_t* color) {
 /** Draws the background for the compass. */
 void __cdecl CG_DrawPlayerCompassBack(void* shader, vec4_t* color) {
     compass_hud_data* data; ASM__movr(data, "esi");
+
+    radar_draw();
 
     if (!cg_drawCompass->value.boolean)
         return;
