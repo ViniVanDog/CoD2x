@@ -432,6 +432,36 @@ int CL_Disconnect_CMD_disconnect() {
     return ret;
 }
 
+
+
+void FS_BuildOSPath_Internal(const char* base, const char* game, char* qpath, char* ospath, int32_t thread, int read_write) {
+    //Com_Printf("FS_BuildOSPath_Internal: R/W=%c, base='%s', game='%s', qpath='%s'\n", read_write ? 'W' : 'R', base, game, qpath);
+
+    // Always use "main" folder for config_mp.cfg
+    // base: "main" / "modFolderName"
+    // qpath: "players/default/config_mp.cfg"
+    if (stricmp(qpath, "players/default/config_mp.cfg") == 0) {
+        //Com_Printf("FS_BuildOSPath_Internal: Changed game from '%s' to 'main'\n", game);
+        game = "main"; // always use main for config_mp.cfg
+    }
+
+    ASM_CALL(RETURN_VOID, 0x00421c30, 4, EAX(base), PUSH(game), PUSH(qpath), PUSH(ospath), PUSH(thread));
+
+    return;
+}
+
+// Called in FS_FOpenFileWrite
+void FS_BuildOSPath_Internal_FS_Write(const char* game, char* qpath, char* ospath, int32_t thread) {
+    const char* base;  ASM( movr, base,  "eax" );
+    return FS_BuildOSPath_Internal(base, game, qpath, ospath, thread, 1);
+}
+
+// Called in FS_FOpenFileRead
+void FS_BuildOSPath_Internal_FS_Read(const char* game, char* qpath, char* ospath, int32_t thread) {
+    const char* base;  ASM( movr, base,  "eax" );
+    return FS_BuildOSPath_Internal(base, game, qpath, ospath, thread, 0);
+}
+
 #endif // COD2X_WIN32
 
 
@@ -483,5 +513,7 @@ void iwd_patch() {
     patch_call(0x00424869, (unsigned int)Sys_ListFiles);
     patch_call(0x00413e4e, (unsigned int)CL_InitDownloads);
     patch_call(0x0040d5fb, (unsigned int)CL_Disconnect_CMD_disconnect);
+    patch_call(0x004220fc, (unsigned int)FS_BuildOSPath_Internal_FS_Write); // FS_BuildOSPath_Internal in FS_FOpenFileWrite
+    patch_call(0x00422a2a, (unsigned int)FS_BuildOSPath_Internal_FS_Read); // FS_BuildOSPath_Internal in FS_FOpenFileRead
     #endif
 }
