@@ -6,9 +6,9 @@ CoD2x is a modification of Call of Duty 2. It is build on top of 1.3 version.
 It focuses on fixing bugs and adding new features to the game.
 
 # Version history
-
-- 2025-07-25 - 1.4.4.6 - current
-- 2025-07-12 - 1.4.4.5 - current
+- 2025-09-20 - 1.4.5.1-test.1 - *current testing*
+- 2025-07-25 - 1.4.4.6 - **current**
+- 2025-07-12 - 1.4.4.5
 - 2025-07-04 - 1.4.4.4
 - 2025-06-27 - 1.4.4.3
 - 2025-06-23 - 1.4.4.2
