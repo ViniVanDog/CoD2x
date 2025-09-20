@@ -9,6 +9,10 @@
 #define cg_entities         (*((centity_t (*)[1024])0x015E2A80))
 #define clientInfo          (*((clientInfo_t (*)[64])0x015CF994)) // client side info
 
+#define clientState                   (*((clientState_e*)0x00609fe0))
+#define demo_isPlaying                (*((int*)0x0064a170))
+
+
 // https://github.com/id-Software/Enemy-Territory/blob/40342a9e3690cb5b627a433d4d5cbf30e3c57698/src/game/q_shared.h#L1621
 enum clientState_e{
 	CLIENT_STATE_DISCONNECTED,    // not talking to a server
@@ -149,6 +153,13 @@ inline char* CL_BuildMD5(const char* buffer, int len) {
 	char* ret;
 	ASM_CALL(RETURN(ret), 0x004bc1d0, 0, EAX(buffer), EDX(len));
 	return ret;
+}
+
+// Gets a config string by index.
+inline const char* CL_GetConfigString(int idx) {
+    const char* ret;
+    ASM_CALL(RETURN(ret), 0x004020d0, 0, EAX(idx));
+    return ret;
 }
 
 #endif

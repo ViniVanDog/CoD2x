@@ -287,3 +287,20 @@ zip_linux_clean:
 	        if /I not "%%~nxf"=="CoD2x Installation and uninstallation manual.txt" del /Q "%%f" \
 	    ) \
 	)
+
+
+# ========================================================================================================
+# Zip embedded IWD files
+# ========================================================================================================
+.PHONY: zip_iwd
+
+# IWD number, increase for each new IWD created
+IWD_NUM ?= 01
+
+IWD_DIR = src/embedded/iw_CoD2x_$(IWD_NUM)
+IWD_FILE = iw_CoD2x_$(IWD_NUM).iwd
+
+zip_iwd:
+	@echo Zipping files from $(IWD_DIR) into $(IWD_FILE) ...
+	@cd $(IWD_DIR) && $(ZIP_EXEC) a -tzip "..\$(IWD_FILE)" *
+	@echo Done: $(IWD_FILE)

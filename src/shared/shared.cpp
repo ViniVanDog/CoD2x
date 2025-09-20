@@ -21,7 +21,10 @@
  * A version without a pre-release part is considered higher (more stable)
  * than one with a pre-release part if the main parts are identical.
  */
-int version_compare(const char *v1, const char *v2) {
+int version_compare(const char *v1, const char *v2, bool* firstIsPrerelease, bool* secondIsPrerelease) {
+    if (firstIsPrerelease) *firstIsPrerelease = false;
+    if (secondIsPrerelease) *secondIsPrerelease = false;
+
     if (v1 == v2) return 0;
     if (!v1) return -1;
     if (!v2) return 1;
@@ -40,12 +43,14 @@ int version_compare(const char *v1, const char *v2) {
         if (!end1) {
             char *q;
             n1 = strtoull(p1, &q, 10);
+            if (q == p1)  break;  // invalid token
             p1 = (*q == '.') ? q + 1 : q;
         }
 
         if (!end2) {
             char *q;
             n2 = strtoull(p2, &q, 10);
+            if (q == p2)  break;  // invalid token
             p2 = (*q == '.') ? q + 1 : q;
         }
 
@@ -57,6 +62,9 @@ int version_compare(const char *v1, const char *v2) {
     // "1.2.3.4" > "1.2.3.4-alpha"
     const char *pre1 = (*p1 == '-') ? p1 + 1 : NULL;
     const char *pre2 = (*p2 == '-') ? p2 + 1 : NULL;
+
+    if (firstIsPrerelease) *firstIsPrerelease = (pre1 != NULL);
+    if (secondIsPrerelease) *secondIsPrerelease = (pre2 != NULL);
 
     if (!pre1 && !pre2) return 0;
     if (!pre1) return 1;
@@ -114,6 +122,7 @@ int version_compare(const char *v1, const char *v2) {
         if (!*t2) return 1;
     }
 }
+
 
 void escape_string(char* buffer, size_t bufferSize, const void* data, size_t length) {
     // Loop through the data char by char and escape invisible characters into buffer

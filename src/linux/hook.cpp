@@ -3,6 +3,7 @@
 #include <sys/mman.h> // mprotect
 
 #include "shared.h"
+#include "../shared/iwd.h"
 #include "../shared/cod2_common.h"
 #include "../shared/common.h"
 #include "../shared/server.h"
@@ -24,6 +25,7 @@ void __cdecl hook_Com_Frame() {
 
     gsc_frame();
     match_frame();
+    iwd_frame();
 }
 
 
@@ -88,6 +90,7 @@ bool hook_patch() {
     animation_patch();
     gsc_patch();
     match_patch();
+    iwd_patch();
 
     return true;
 }

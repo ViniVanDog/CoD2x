@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_USE_RELATIVE_PATHS ON)
+#set(CMAKE_USE_RELATIVE_PATHS ON)
 
 project(CoD2x LANGUAGES C CXX)
 
@@ -29,6 +29,52 @@ endfunction()
 # Shared sources (C/C++)
 find_files_by_extension(SHARED_SRC "src/shared" c cpp)
 
+
+# Define files to embed
+set(EMBED_FILES
+    ${CMAKE_SOURCE_DIR}/src/embedded/iw_CoD2x_01.iwd
+)
+
+# Pick objcopy output format depending on platform
+if(WIN32)
+    set(OBJCOPY_FORMAT pe-i386)
+else()
+    set(OBJCOPY_FORMAT elf32-i386)
+endif()
+
+set(EMBED_OBJECTS "")
+
+foreach(FILE ${EMBED_FILES})
+    # Extract directory and filename
+    get_filename_component(FILE_DIR ${FILE} DIRECTORY)
+    get_filename_component(NAME ${FILE} NAME)
+
+    # Replace '.' with '_' so symbol names are valid
+    string(REPLACE "." "_" SYMBOL ${NAME})
+
+    set(OUT_OBJ ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.o)
+    set_source_files_properties(${OUT_OBJ} PROPERTIES
+        GENERATED TRUE
+        EXTERNAL_OBJECT TRUE
+    )
+    add_custom_command(
+        OUTPUT ${OUT_OBJ}
+        # Run objcopy with working directory set to FILE_DIR
+        COMMAND ${CMAKE_COMMAND} -E chdir ${FILE_DIR}
+            ${CMAKE_OBJCOPY}
+                -I binary
+                -O ${OBJCOPY_FORMAT}
+                --binary-architecture i386
+                ${NAME} ${OUT_OBJ}
+        DEPENDS ${FILE}
+        COMMENT "Embedding ${FILE}"
+    )
+
+    list(APPEND EMBED_OBJECTS ${OUT_OBJ})
+endforeach()
+
+
+
 # -----------------------------------
 # Windows: mss32.dll (C/C++ + NASM + RC)
 # -----------------------------------
@@ -41,6 +87,7 @@ if (WIN32)
   add_library(mss32 SHARED
     ${MSS32_CC}
     ${SHARED_SRC}
+    ${EMBED_OBJECTS}
   )
 
   target_compile_features(mss32 PRIVATE cxx_std_17)
@@ -62,7 +109,8 @@ if (WIN32)
     $<$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>:
         -Wall -Wextra -Wno-unused-parameter -Wno-address-of-packed-member
         -g -m32 -msse -O0 
-        -DCJSON_CDECL=__cdecl -DMG_TLS=MG_TLS_OPENSSL
+        -DCJSON_CDECL=__cdecl 
+        -DMG_TLS=MG_TLS_OPENSSL -DMG_ENABLE_POSIX_FS=0
         -fdiagnostics-color=always
         $<$<CONFIG:Debug>:-DDEBUG=1>
     >
@@ -109,6 +157,7 @@ if (UNIX AND NOT WIN32)
   add_library(linux SHARED
     ${LNX_CC}
     ${SHARED_SRC}
+    ${EMBED_OBJECTS}
   )
 
   target_compile_features(linux PRIVATE cxx_std_17)

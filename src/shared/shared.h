@@ -80,7 +80,7 @@
 #include "assembly.h"
 #include "logger.h"
 
-int version_compare(const char *v1, const char *v2);
+int version_compare(const char *v1, const char *v2, bool* firstIsPrerelease = nullptr, bool* secondIsPrerelease = nullptr);
 void escape_string(char* buffer, size_t bufferSize, const void* data, size_t length);
 uint16_t crc16_ccitt(const uint8_t* data, size_t length);
 int base64_encode(const uint8_t* input, size_t len, char* output, size_t out_size);

@@ -24,6 +24,7 @@
 #include "error.h"
 #include "downloading.h"
 #include "debug.h"
+#include "../shared/iwd.h"
 #include "../shared/common.h"
 #include "../shared/server.h"
 #include "../shared/game.h"
@@ -95,6 +96,7 @@ void hook_Com_Frame()
     match_frame();
     registry_frame();      // called as last so other modules can handle version changes
     drawing_frame();
+    iwd_frame();
 
     // Call the original function
     ASM_CALL(RETURN_VOID, 0x00434f70);
@@ -288,6 +290,7 @@ bool hook_patch() {
     game_patch();
     animation_patch();
     gsc_patch();
+    iwd_patch();
 
     
     // Patch black screen / long loading on game startup

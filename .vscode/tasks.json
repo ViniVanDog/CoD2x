@@ -109,6 +109,19 @@
                     "PATH": "${workspaceFolder}/tools/mingw/bin;${env:PATH}"
                 }
             }
+        },
+
+        {
+            "label": "Zip latest CoD2x IWD",
+            "type": "shell",
+            "command": "mingw32-make.exe",
+            "args": ["zip_iwd"],
+            "problemMatcher": [],
+            "options": {
+                "env": {
+                    "PATH": "${workspaceFolder}/tools/mingw/bin;${workspaceFolder}/tools/7zip;${env:PATH}"
+                }
+            }
         }
     ],
     "inputs": [

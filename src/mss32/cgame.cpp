@@ -122,54 +122,6 @@ void cgame_frame() {
 }
 
 
-//00463e70  void* __stdcall Sys_ListFiles(char* directory @ eax, char* extension, char* filter @ edx, int32_t* numFiles, int32_t wantsubs)
-char** Sys_ListFiles(char* extension, int32_t* numFiles, int32_t wantsubs) {
-    // Load parameters from registers
-    char* directory;
-    char* filter;
-    ASM( movr, directory, "eax" );
-    ASM( movr, filter, "edx" );
-
-    // Call the original function
-    const void* original_func = (void*)(0x00463e70);
-    char** result;
-    ASM( push,     wantsubs         ); // 5nd argument                    
-    ASM( push,     numFiles         ); // 4nd argument                    
-    ASM( push,     extension        ); // 3nd argument                    
-    ASM( mov,      "edx", filter    ); // 2st argument
-    ASM( mov,      "eax", directory ); // 1st argument
-    ASM( call,     original_func    );
-    ASM( add_esp,  12               ); // Clean up the stack (3 argument × 4 bytes = 12)   
-    ASM( movr,     result, "eax"    ); // Store the return value in the 'result' variable
-
-
-    // When the game starts for the first time, load only the original IWD files
-    // The main folder might contain mix of mods from different servers that might cause "iwd sum mismatch" errors when running the game
-    // This will make sure these mods are not loaded at startup, but will be loaded when connecting to the game
-    
-    // TODO: turned off untill these errors are fixed:
-    // - not working when started as server on windows
-    // - not working when upper iwd names are used
-    // - ui_joinGametype is set to latest gametype mode, but since mods are not allowed the range is not valid (aldo idk how it worked when mods were deleted manually)
-    // in future version we should support list of allowed iwd names instead of block all
-
-    /*if (firstTime) {
-        int writeIndex = 0;
-        for (int i = 0; i < *numFiles; i++) {
-            //Com_Printf("File: %s\n", result[i]);
-            // Check if file starts with "iw_00" - "iw_15" or starts with "localized_"
-            if (strncmp(result[i], "iw_", 3) == 0 || strncmp(result[i], "localized_", 10) == 0) {
-                result[writeIndex] = result[i];
-                writeIndex++;
-            }
-        }
-        *numFiles = writeIndex;
-    }*/
-
-    return result;
-}
-
-
 
 void CG_TraceCapsule(trace_t *result, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int skipNumber, int mask) {
     ASM_CALL(RETURN_VOID, 0x004de690, 7, PUSH(result), PUSH(start), PUSH(mins), PUSH(maxs), PUSH(end), PUSH(skipNumber), PUSH(mask));
@@ -264,8 +216,6 @@ void CG_OffsetThirdPersonView( void ) {
 
 /** Called before the entry point is called. Used to patch the memory. */
 void cgame_patch() {
-
-    patch_call(0x00424869, (unsigned int)Sys_ListFiles);
 
     patch_call(0x004cfb27, (unsigned int)CG_OffsetThirdPersonView);
 
