@@ -20,12 +20,13 @@ void gsc_player_playerGetHWID(scr_entref_t ref) {
 
 	const char* HWID2 = Info_ValueForKey(client->userinfo, "cl_hwid2");
 
-	if (HWID2 == NULL || strlen(HWID2) != 32)
+	// Dont use this check, as its empty for bots and for clients it should not happen as its validated on connect
+	/*if (HWID2 == NULL || strlen(HWID2) != 32)
 	{
 		Scr_Error(va("client %d has no HWID2", id)); // should never happen, as its validated on client connect
 		Scr_AddUndefined();
 		return;
-	}
+	}*/
 
 	Scr_AddString(HWID2);
 }
