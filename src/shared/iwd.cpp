@@ -251,6 +251,190 @@ qboolean FS_iwIwd_Win32() {
 
 
 
+#if COD2X_WIN32
+
+// Windows only
+// Called when the game needs to list files in a directory
+char** Sys_ListFiles(char* extension, int32_t* numFiles, int32_t wantsubs) {
+    // Load parameters from registers
+    char* directory;
+    char* filter;
+    ASM( movr, directory, "eax" );
+    ASM( movr, filter, "edx" );
+
+    // Call the original function
+    char** result;
+    ASM_CALL(RETURN(result), 0x00463e70, 3, EAX(directory), EDX(filter), PUSH(extension), PUSH(numFiles), PUSH(wantsubs));
+    // directory: D:\\CoD2x\\bin\\windows\\main
+    // extension: "iwd"
+    // result[0] = "iw_00.iwd"
+
+    // When the game starts for the first time, load only the original IWD files
+    // The main folder might contain mix of mods from different servers that might cause "iwd sum mismatch" errors when running the game
+    // This will make sure these mods are not loaded at startup, but will be loaded when connecting to the game
+
+    // No files in this folder (propably raw, devraw, etc)
+    if (*numFiles <= 0) {
+        return result;
+    }
+
+    // Read value via function to get value even if dvar is not registered yet
+    bool dedicatedValue = Dvar_GetInt("dedicated");
+
+    // Server
+    // - load all, do not filter
+    if (dedicatedValue > 0) {
+        return result;
+    }
+
+    // Client connecting to server (not demo and not listen server)
+    else if (clientState >= CLIENT_STATE_CONNECTING && demo_isPlaying == false && sv_running->value.boolean == false) {
+        return result;
+    }
+
+    else {
+        dvar_t* fs_game = Dvar_GetDvarByName("fs_game");
+        if (!fs_game || (fs_game->value.string && fs_game->value.string[0] != '\0' && stricmp(fs_game->value.string, "main") != 0)) {
+            return result; // mods are allowed, do not filter anything
+        }
+
+        // The original function created list of loaded iwd files
+        // We will remove some entries from this list via filtering
+        int writeIndex = 0;
+        int i;
+        for (i = 0; i < *numFiles; i++) {
+            //Com_Printf("File: %s\n", result[i]);
+            
+            // Remove ".iwd" extension from result[i]
+            char iwIwdName[MAX_QPATH];
+            char* dot = strrchr(result[i], '.');
+            int len = dot ? (int)(dot - result[i]) : (int)strlen(result[i]);
+            snprintf(iwIwdName, sizeof(iwIwdName), "/%.*s", len, result[i]);
+            
+            // Is file "iw_00" - "iw_15" or starts with "localized_"
+            bool isOriginalFile = FS_iwIwd(iwIwdName, "");
+
+            // When replaying a demo, make sure all iwds used by the server are loaded
+            if (isOriginalFile == false && COD2X_WIN32 && demo_isPlaying) {
+
+                const char* serverinfo = CL_GetConfigString(CS_SYSTEMINFO);
+                const char* sv_iwdNames = Info_ValueForKey(serverinfo, "sv_iwdNames"); // "zpam_maps_v4 zpam334 iw_16 iw_15 iw_14 iw_13 iw_12 iw_11 iw_10 iw_09 iw_08 iw_07 iw_06 iw_05 iw_04 iw_03 iw_02 iw_01".
+
+                Cmd_TokenizeString(sv_iwdNames);
+
+                int count = Cmd_Argc();
+                if (count > 1024)
+                    count = 1024;
+                if (count > 0) {               
+                    // Check if this iwd is in the list
+                    for (int j = 0; j < count; j++) {
+                        const char* demoIwdName = Cmd_Argv(j); // "zpam334"
+                        if (FS_FilenameCompare(va("%s.iwd", demoIwdName), result[i]) == 0) {
+                            Com_Printf("Required IWD from demo: %s.iwd\n", demoIwdName);
+                            isOriginalFile = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Listen server
+            else if (isOriginalFile == false && COD2X_WIN32 && sv_running && sv_running->value.boolean && clientState != CLIENT_STATE_DISCONNECTED) {
+                
+                // Helper lambda to check if zpam/zpam_maps_v IWD is latest, allowing suffix after version
+                auto isLatestZpamIwd = [&](const char* prefix) -> bool {
+                    int prefixLen = (int)strlen(prefix);
+                    if (strnicmp(result[i], prefix, prefixLen) != 0) return false;
+                    // Find version number after prefix
+                    const char* verStart = result[i] + prefixLen;
+                    // Check if first char is digit
+                    if (!isdigit((unsigned char)verStart[0])) return false;
+                    int currentVersion = atoi(verStart);
+                    for (int j = 0; j < *numFiles; j++) {
+                        if (j == i) continue;
+                        if (strnicmp(result[j], prefix, prefixLen) == 0) {
+                            const char* otherVerStart = result[j] + prefixLen;
+                            int otherVersion = atoi(otherVerStart);
+                            // If otherVersion > currentVersion, it's newer
+                            if (otherVersion > currentVersion) {
+                                return false;
+                            }
+                        }
+                    }
+                    return true;
+                };
+
+                // Allow latest "zpam[...].iwd" file
+                if (isLatestZpamIwd("zpam")) {
+                    Com_Printf("Allowed latest ZPAM IWD file: %s\n", result[i]);
+                    isOriginalFile = true;
+                }
+
+                // Allow latest "zpam_maps_vX[...].iwd" file
+                if (isLatestZpamIwd("zpam_maps_v")) {
+                    Com_Printf("Allowed latest ZPAM_MAPS IWD file: %s\n", result[i]);
+                    isOriginalFile = true;
+                }
+                
+            }
+
+            if (isOriginalFile) {
+                if (writeIndex != i) {
+                    char* temp = result[writeIndex];
+                    result[writeIndex] = result[i];
+                    result[i] = temp;
+                }
+                writeIndex++;
+            } else {
+                Com_Printf("Filtered out IWD file: %s\n", result[i]);
+                //Z_FreeInternal(result[i]); // free memory allocated by original function
+            }
+        }
+        *numFiles = writeIndex;
+        //result[i] = NULL; // terminate the list
+    }
+
+
+    return result;
+}
+
+
+void CL_InitDownloads() {
+    // Since we are filtering loaded IWD files for demo, game then thought some required IWD files were missing
+    // Fix that by calling CL_DownloadsComplete directly
+    if (demo_isPlaying) {
+        // Call CL_DownloadsComplete
+        ASM_CALL(RETURN_VOID, 0x0040dc20); 
+        return;
+    }
+
+    // Call the original CL_InitDownloads function
+    ASM_CALL(RETURN_VOID, 0x0040df10);
+}
+
+
+
+// Called on /disconnect
+int CL_Disconnect_CMD_disconnect() {
+    int cs = clientState;
+
+    int ret;
+    ASM_CALL(RETURN(ret), 0x0040cd10);
+
+    // If player was connected to server, reset fs_game to main and restart FS
+    if (cs >= CLIENT_STATE_CONNECTED)
+    {
+        Dvar_SetString(Dvar_GetDvarByName("fs_game"), "");
+        FS_Restart(0);
+        ASM_CALL(RETURN_VOID, 0x00415a00); // CL_ShutdownUI
+    }
+
+    return ret;
+}
+
+#endif // COD2X_WIN32
+
+
 
 bool iwd_firstTime = true;
 
@@ -294,4 +478,10 @@ void iwd_patch() {
     patch_call(ADDR(0x00455455, 0x0808ff2c), (unsigned int)&WL(FS_iwIwd_Win32, FS_iwIwd)); // 
     patch_call(ADDR(0x0045ab96, 0x08094fce), (unsigned int)&WL(FS_iwIwd_Win32, FS_iwIwd)); // SVC_Status
     patch_call(ADDR(0x0045b2e5, 0x08095822), (unsigned int)&WL(FS_iwIwd_Win32, FS_iwIwd)); // SVC_Info
+
+    #if COD2X_WIN32
+    patch_call(0x00424869, (unsigned int)Sys_ListFiles);
+    patch_call(0x00413e4e, (unsigned int)CL_InitDownloads);
+    patch_call(0x0040d5fb, (unsigned int)CL_Disconnect_CMD_disconnect);
+    #endif
 }
