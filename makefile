@@ -32,7 +32,7 @@ VERSION_PROTOCOL = 5
 VERSION_PATCH = 1
 
 # CoD2x test version (e.g. -test.1)
-VERSION_TEST = -test.1
+VERSION_TEST = -test.2
 VERSION_IS_TEST = 1
 
 # Full version string
