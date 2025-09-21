@@ -82,12 +82,18 @@ static void iwd_cleanupCoD2xIwdFiles() {
         // Delete higher-numbered IWDs (downgrade protection)
         if (num > NUM_IW_COD2X_IWDS) return true;
 
-        // For not-test versions, delete testing versions
-        if (APP_VERSION_IS_TEST == 0) {
-            // iw_CoD2x_xx_1.4.5.1.iwd
-            // iw_CoD2x_xx_1.4.5.1-test.1.iwd
-            const char* versionPart = filename + prefixLen + 2; // after the two digits
-            if (*versionPart != '.') return true; // if it does not end with .iwd, delete it (it's a testing version)
+        // Delete testing versions
+        // iw_CoD2x_xx_1.4.5.1-test.1.iwd  vs  iw_CoD2x_xx.iwd
+        const char* versionPart = filename + prefixLen + 2; // after the two digits
+        if (*versionPart != '.') {
+            if (APP_VERSION_IS_TEST) {
+                // Ignore current test version
+                if (strstr(versionPart, APP_VERSION) == nullptr) {
+                    return true; // if it does not contain current test version, delete it
+                }
+            } else {
+                return true; // if it does not end with .iwd, delete it (it's a testing version)
+            }
         }
 
         return false;
@@ -114,7 +120,7 @@ static void iwd_cleanupCoD2xIwdFiles() {
         }
 
         if (shouldDelete(name)) {
-            #if COD2X_WIN32
+            #if COD2X_WIN32 && DEBUG
                 // Confirm on Windows
                 if (IDYES != MessageBoxA(
                         NULL,
