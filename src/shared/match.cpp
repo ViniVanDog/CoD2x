@@ -526,7 +526,10 @@ void match_cmd() {
         } else {
             auto progressData = match_create_json_data();
 
-            Com_Printf("Match is currently active.\nURL: %s\nMatch data:\n%s\nProgress data:\n%s\n", match.url, match.data.json.c_str(), progressData.c_str());
+            Com_Printf("Match is currently active.\n");
+            Com_Printf("URL: %s\n", match.url);
+            Com_Printf("Match data:\n%s\n", match.data.json.c_str());
+            Com_Printf("Progress data:\n%s\n", progressData.c_str());
         }
 
     } else if (Q_stricmp(command, "redownload") == 0) {
@@ -598,6 +601,8 @@ bool match_beforeMapChangeOrRestart(bool fromScript, bool bComplete, bool shutdo
     // Map is changing via map_rotate
     if (match.activated && bComplete && source == SV_MAP_CHANGE_SOURCE_MAP_ROTATE) 
     {
+        // TODO removed untill we know the order of maps
+        /*
         // If we looped thru all maps and there is no more map to rotate to, cancel the match
         auto mapname = Dvar_GetDvarByName("sv_mapRotationCurrent");
         if (mapname && mapname->value.string && mapname->value.string[0] == '\0') {
@@ -607,14 +612,7 @@ bool match_beforeMapChangeOrRestart(bool fromScript, bool bComplete, bool shutdo
             for (int i = 0; i < sv_maxclients->value.integer; i++) {
                 client_t* client = &svs_clients[i];
                 
-                if (client && client->state/* == CS_ACTIVE*/) {
-                    Com_Printf("### before SV_DropClient\n"); // TODO remove
-                    Com_Printf("### - state: %d\n", client->state);
-                    Com_Printf("### - name: %s\n", client->name);
-                    Com_Printf("### - lastPacketTime: %d\n", client->lastPacketTime);
-                    Com_Printf("### - challenge: %d\n", client->challenge);
-                    Com_Printf("### - userinfo: %s\n", client->userinfo);
-
+                if (client && client->state) {
                     SV_DropClient(client, "\n^2Match has finished^7");
                     Com_Printf("### after SV_DropClient\n");
                 }
@@ -626,7 +624,7 @@ bool match_beforeMapChangeOrRestart(bool fromScript, bool bComplete, bool shutdo
             Com_Printf("- Match ID: %s\n", match.data.match_id);
             Com_Printf("- Teams: %s (%s) vs %s (%s)\n", match.data.team1.name, match.data.team1.id, match.data.team2.name, match.data.team2.id);
             Com_Printf("======================================================\n");
-        }
+        }*/
     }
 
     // Canceling because of finished match, /match cancel or server shutdown
