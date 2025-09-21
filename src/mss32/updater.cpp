@@ -195,8 +195,9 @@ bool updater_downloadAndReplaceDllFile(const char *url, char *errorBuffer, size_
     // Schedule the deletion of the old DLL
     // Since the DLL is locked by the application, we can't delete it immediately
     if (!MoveFileEx(dllFilePathOld, NULL, MOVEFILE_DELAY_UNTIL_REBOOT)) {
-        snprintf(errorBuffer, errorBufferSize, "Error scheduling old DLL deletion: '%s'.", dllFilePathOld);
-        return false;
+        // Since its possible to execute only with admin rights, dont show error
+        //snprintf(errorBuffer, errorBufferSize, "Error scheduling old DLL deletion: '%s'.", dllFilePathOld);
+        //return false;
     }
 
     return true;
