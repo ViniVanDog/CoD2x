@@ -7,7 +7,7 @@ BEGIN
         BLOCK "040904b0"                    			
         BEGIN                               			
             VALUE "ProductName", "CoD2x"    			
-            VALUE "ProductVersion", "1.4.5.1-test.2" 		
+            VALUE "ProductVersion", "1.4.5.1-test.3" 		
         END                                 			
     END                                     			
     BLOCK "VarFileInfo"                     			
