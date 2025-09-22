@@ -286,6 +286,16 @@ char** Sys_ListFiles(char* extension, int32_t* numFiles, int32_t wantsubs) {
     // extension: "iwd"
     // result[0] = "iw_00.iwd"
 
+    // Extract the last folder name from directory, find the last occurrence of either '\\' or '/'
+    const char* folder;
+    const char* lastSlash = nullptr;
+    for (const char* p = directory; *p; ++p) {
+        if (*p == '\\' || *p == '/') {
+            lastSlash = p;
+        }
+    }
+    folder = lastSlash ? lastSlash + 1 : directory;
+
     // When the game starts for the first time, load only the original IWD files
     // The main folder might contain mix of mods from different servers that might cause "iwd sum mismatch" errors when running the game
     // This will make sure these mods are not loaded at startup, but will be loaded when connecting to the game
@@ -340,28 +350,36 @@ char** Sys_ListFiles(char* extension, int32_t* numFiles, int32_t wantsubs) {
             bool isOriginalFile = FS_iwIwd(iwIwdName, "", cod2x_version);
 
 
-            // When connecting to server or replaying demo, load only IWD files referenced by the server
+            // When connecting to server or replaying demo
             if (isOriginalFile == false && COD2X_WIN32 && isListenServer == false && clientState >= CLIENT_STATE_CONNECTING) {
 
-                const char* systeminfo = CL_GetConfigString(CS_SYSTEMINFO);
-                const char* sv_iwdNames = Info_ValueForKey(systeminfo, "sv_iwdNames"); // "zpam_maps_v4 zpam334 iw_16 iw_15 iw_14 iw_13 iw_12 iw_11 iw_10 iw_09 iw_08 iw_07 iw_06 iw_05 iw_04 iw_03 iw_02 iw_01".
+                // When playing demo, load all IWD files in movie folder
+                // This allows to load mod IWD files when playing demo
+                if (demo_isPlaying && stricmp(folder, "movie") == 0) {                 
+                    isOriginalFile = true;                  
+                }
+                // For other non-movie folders or when conecting to server, load only IWD files referenced by the server
+                else {
+                    const char* systeminfo = CL_GetConfigString(CS_SYSTEMINFO);
+                    const char* sv_iwdNames = Info_ValueForKey(systeminfo, "sv_iwdNames"); // "zpam_maps_v4 zpam334 iw_16 iw_15 iw_14 iw_13 iw_12 iw_11 iw_10 iw_09 iw_08 iw_07 iw_06 iw_05 iw_04 iw_03 iw_02 iw_01".
 
-                Cmd_TokenizeString(sv_iwdNames);
+                    Cmd_TokenizeString(sv_iwdNames);
 
-                int count = Cmd_Argc();
-                if (count > 1024)
-                    count = 1024;
-                if (count > 0) {               
-                    // Check if this iwd is in the list
-                    for (int j = 0; j < count; j++) {
-                        const char* demoIwdName = Cmd_Argv(j); // "zpam334"
-                        // If demo iwd name starts with currently processed iwd file
-                        // demoIwdName might be "zpam_maps_v4"
-                        // result[i] might be "zpam_maps_v4.iwd" or "zpam_maps_v4.8bb28f35.iwd" (use both)
-                        if (I_strnicmp(demoIwdName, result[i], strlen(demoIwdName)) == 0) {
-                            Com_Printf("Required IWD from demo: %s.iwd\n", demoIwdName);
-                            isOriginalFile = true;
-                            break;
+                    int count = Cmd_Argc();
+                    if (count > 1024)
+                        count = 1024;
+                    if (count > 0) {               
+                        // Check if this iwd is in the list
+                        for (int j = 0; j < count; j++) {
+                            const char* demoIwdName = Cmd_Argv(j); // "zpam334"
+                            // If demo iwd name starts with currently processed iwd file
+                            // demoIwdName might be "zpam_maps_v4"
+                            // result[i] might be "zpam_maps_v4.iwd" or "zpam_maps_v4.8bb28f35.iwd" (use both)
+                            if (I_strnicmp(demoIwdName, result[i], strlen(demoIwdName)) == 0) {
+                                Com_Printf("Required IWD from server/demo: %s.iwd\n", demoIwdName);
+                                isOriginalFile = true;
+                                break;
+                            }
                         }
                     }
                 }
@@ -491,6 +509,19 @@ void FS_BuildOSPath_Internal_FS_Read(const char* game, char* qpath, char* ospath
     return FS_BuildOSPath_Internal(base, game, qpath, ospath, thread, 0);
 }
 
+
+// This function is called in FS_Startup after registering the original paths, we add new one from movie
+void FS_AddCommands() {
+
+    // Add "movie" folder to search path for IWD files
+    const char* path = Dvar_GetString("fs_basepath");
+    const char* dir = "movie";
+    ASM_CALL(RETURN_VOID, 0x00424f20, 0, EBX(path), EDI(dir)); // FS_AddGameDirectory(const char *path, const char *dir)
+
+    // Original function
+    ASM_CALL(RETURN_VOID, 0x0043bd30);
+}
+
 #endif // COD2X_WIN32
 
 
@@ -544,5 +575,6 @@ void iwd_patch() {
     patch_call(0x0040d5fb, (unsigned int)CL_Disconnect_CMD_disconnect);
     patch_call(0x004220fc, (unsigned int)FS_BuildOSPath_Internal_FS_Write); // FS_BuildOSPath_Internal in FS_FOpenFileWrite
     patch_call(0x00422a2a, (unsigned int)FS_BuildOSPath_Internal_FS_Read); // FS_BuildOSPath_Internal in FS_FOpenFileRead
+    patch_call(0x0042572f, (unsigned int)FS_AddCommands); // in FS_Startup
     #endif
 }
