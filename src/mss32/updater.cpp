@@ -372,8 +372,8 @@ void updater_dialogConfirmed() {
     char errorBuffer[1024];
     bool ok = updater_downloadAndReplaceDllFile(cl_updateFiles->value.string, errorBuffer, sizeof(errorBuffer));
     if (ok) {
-        // Restart the application
-        ShellExecute(NULL, "open", EXE_PATH, NULL, NULL, SW_SHOWNORMAL);
+        // Restart the application with command line arguments
+        ShellExecute(NULL, "open", EXE_PATH, EXE_COMMAND_LINE, NULL, SW_SHOWNORMAL);
         ExitProcess(0);
     } else {
         Com_Error(ERR_DROP, "Failed to download and replace file.\n\n%s", errorBuffer);
