@@ -502,7 +502,18 @@ void FS_BuildOSPath_Internal(const char* base, const char* game, char* qpath, ch
         }
     }
 
+    // Use only .iwd files from movie folder
+    else if (stricmp(game, "movie") == 0) {
+        const char* dot = strrchr(qpath, '.');
+        if (!dot || FS_FilenameCompare(dot, ".iwd") != 0) {
+            //Com_Printf("FS_BuildOSPath_Internal: Changed game from 'movie' to 'main' for demo\n");
+            game = "main"; // use main for non-iwd files when playing demo
+        }
+    }
+
     ASM_CALL(RETURN_VOID, 0x00421c30, 4, EAX(base), PUSH(game), PUSH(qpath), PUSH(ospath), PUSH(thread));
+
+    //Com_Printf("FS_BuildOSPath_Internal: Result: '%s'\n", ospath);
 
     return;
 }
@@ -520,13 +531,16 @@ void FS_BuildOSPath_Internal_FS_Read(const char* game, char* qpath, char* ospath
 }
 
 
+
 // This function is called in FS_Startup after registering the original paths, we add new one from movie
 void FS_AddCommands() {
 
     // Add "movie" folder to search path for IWD files
-    const char* path = Dvar_GetString("fs_basepath");
-    const char* dir = "movie";
-    ASM_CALL(RETURN_VOID, 0x00424f20, 0, EBX(path), EDI(dir)); // FS_AddGameDirectory(const char *path, const char *dir)
+    if (demo_isPlaying) {
+        const char* path = Dvar_GetString("fs_basepath");
+        const char* dir = "movie";
+        ASM_CALL(RETURN_VOID, 0x00424f20, 0, EBX(path), EDI(dir)); // FS_AddGameDirectory(const char *path, const char *dir)
+    }
 
     // Original function
     ASM_CALL(RETURN_VOID, 0x0043bd30);
@@ -562,7 +576,8 @@ void iwd_frame() {
         if (clientState != iwd_clientStateLast && clientState == CLIENT_STATE_DISCONNECTED) {
 
             // Fix crash when ui_joinGametype points to gametype that does not exists because of mod change
-            Dvar_SetInt(Dvar_GetDvarByName("ui_joinGametype"), 0);
+            if (Dvar_GetInt("ui_joinGametype") != 0)
+                Dvar_SetInt(Dvar_GetDvarByName("ui_joinGametype"), 0);
         }
 
         iwd_clientStateLast = clientState;
@@ -584,7 +599,11 @@ void iwd_patch() {
     patch_call(0x00413e4e, (unsigned int)CL_InitDownloads);
     patch_call(0x0040d5fb, (unsigned int)CL_Disconnect_CMD_disconnect);
     patch_call(0x004220fc, (unsigned int)FS_BuildOSPath_Internal_FS_Write); // FS_BuildOSPath_Internal in FS_FOpenFileWrite
+    patch_call(0x00422283, (unsigned int)FS_BuildOSPath_Internal_FS_Write); // FS_BuildOSPath_Internal in FS_FOpenFileAppend
     patch_call(0x00422a2a, (unsigned int)FS_BuildOSPath_Internal_FS_Read); // FS_BuildOSPath_Internal in FS_FOpenFileRead
+    patch_call(0x00422b2e, (unsigned int)FS_BuildOSPath_Internal_FS_Read); // FS_BuildOSPath_Internal in FS_FOpenFileRead
+    patch_call(0x004229db, (unsigned int)FS_BuildOSPath_Internal_FS_Read); // FS_BuildOSPath_Internal in FS_FOpenFileRead
+    patch_call(0x004227ec, (unsigned int)FS_BuildOSPath_Internal_FS_Read); // FS_BuildOSPath_Internal in FS_FOpenFileRead
     patch_call(0x0042572f, (unsigned int)FS_AddCommands); // in FS_Startup
     #endif
 }
