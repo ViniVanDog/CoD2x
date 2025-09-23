@@ -12,6 +12,8 @@
 #define clientState                   (*((clientState_e*)0x00609fe0))
 #define demo_isPlaying                (*((int*)0x0064a170))
 
+#define com_playerProfile (*(dvar_t **)(0x00c23f1c))
+
 
 // https://github.com/id-Software/Enemy-Territory/blob/40342a9e3690cb5b627a433d4d5cbf30e3c57698/src/game/q_shared.h#L1621
 enum clientState_e{

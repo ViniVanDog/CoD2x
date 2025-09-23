@@ -479,17 +479,27 @@ int CL_Disconnect_CMD_disconnect() {
     return ret;
 }
 
-
-
+/**
+ * Internal function to build OS path from base, game and qpath
+ * base: "D:\CoD2x\bin\windows"
+ * game: "main" / "modFolderName"
+ * qpath: "players/default/config_mp.cfg" / "hunkusage.dat" / "iw_00.iwd"
+ * ospath: output buffer
+ */
 void FS_BuildOSPath_Internal(const char* base, const char* game, char* qpath, char* ospath, int32_t thread, int read_write) {
     //Com_Printf("FS_BuildOSPath_Internal: R/W=%c, base='%s', game='%s', qpath='%s'\n", read_write ? 'W' : 'R', base, game, qpath);
 
+    bool isConfig = com_playerProfile && stricmp(qpath, va("players/%s/config_mp.cfg", com_playerProfile->value.string)) == 0;
+    
     // Always use "main" folder for config_mp.cfg
-    // base: "main" / "modFolderName"
-    // qpath: "players/default/config_mp.cfg"
-    if (stricmp(qpath, "players/default/config_mp.cfg") == 0) {
+    if (isConfig) {
         //Com_Printf("FS_BuildOSPath_Internal: Changed game from '%s' to 'main'\n", game);
         game = "main"; // always use main for config_mp.cfg
+
+        // Print debug write message
+        if (read_write == 1) {
+            Com_DPrintf("Writing to '%s/%s'\n", game, qpath);
+        }
     }
 
     ASM_CALL(RETURN_VOID, 0x00421c30, 4, EAX(base), PUSH(game), PUSH(qpath), PUSH(ospath), PUSH(thread));
