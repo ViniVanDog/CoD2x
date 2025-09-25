@@ -40,14 +40,19 @@ void Com_ParseCommandLine( char *commandLine )
         }
         // CoD2x: End
 
-		if ( *commandLine == '"' )
+        // CoD2x: Break on + as in original
+        if (inq && *commandLine == ' ' && *(commandLine + 1) == '+') {
+            inq = false;
+        }
+        // CoD2x: End
+        
+		else if ( *commandLine == '"' )
 		{
 			inq = !inq;
 		}
 
-        // CoD2x: Loop thru the quote, ignore separators
-        else if ( inq )
-        {
+        // CoD2x: Loop thru the quote, ignore separators, break on + as in original
+        else if (inq) {
             commandLine++;
             continue;
         }
@@ -61,6 +66,8 @@ void Com_ParseCommandLine( char *commandLine )
 			{
 				return;
 			}
+
+            inq = false;
 
             // CoD2x: dont add empty lines
             if (*(commandLine + 1) != '\0' && *(commandLine + 1) != '+' && *(commandLine + 1) != '\n' && *(commandLine + 1) != ',') { // CoD2x: end

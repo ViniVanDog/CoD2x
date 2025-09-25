@@ -6,8 +6,6 @@
 #include "../shared/cod2_dvars.h"
 #include "../shared/cod2_client.h"
 
-#define clientState                   (*((clientState_e*)0x00609fe0))
-#define demo_isPlaying                (*((int*)0x0064a170))
 
 int competitive_clientStateLast = 0;
 
@@ -16,7 +14,14 @@ extern dvar_t* g_competitive;
 
 void competitive_cmd_wait() {
 
-    if (g_competitive->value.boolean) {
+    bool block = g_competitive->value.boolean;
+
+    // Prevent blocking wait command untill connnected to the server
+    if (COD2X_WIN32 && (clientState < CLIENT_STATE_PRIMED || demo_isPlaying)) {
+        block = false;
+    }
+
+    if (block) {
         Com_Printf("Wait command is disabled by the server via competitive settings.\n");
         return;
     }
