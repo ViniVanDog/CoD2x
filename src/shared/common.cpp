@@ -2,17 +2,21 @@
 
 #include "shared.h"
 #include "cod2_common.h"
+#include "cod2_cmd.h"
 
 #define MAX_CONSOLE_LINES 32
 #define com_consoleLines ((char**)ADDR(0x00c26110, 0x081a21e0))
 #define com_numConsoleLines (*(int*)ADDR(0x00c27280, 0x081a21d4))
 
+char* common_commandLineOriginal = NULL;
 char common_commandLine[1024] = {0};
 
 void Com_ParseCommandLine( char *commandLine )
 {
     bool inq = 0;
     com_numConsoleLines = 0;
+
+    common_commandLineOriginal = commandLine;
 
     // CoD2x: Copy command line to local buffer
     if (strlen(commandLine) >= sizeof(common_commandLine)) {
@@ -45,7 +49,7 @@ void Com_ParseCommandLine( char *commandLine )
             inq = false;
         }
         // CoD2x: End
-        
+
 		else if ( *commandLine == '"' )
 		{
 			inq = !inq;
@@ -96,28 +100,43 @@ void Com_ParseCommandLine_Win32() {
 
 
 
-void common_printInfo() {
-    Com_Printf("-----------------------------------\n");
-    Com_Printf("Command line: ");
+
+void cmd_commandLine() {
+    Com_Printf("Command line: \n");
+    Com_Printf("%s\n", common_commandLineOriginal);
     for (int i = 0; i < com_numConsoleLines; i++) {
         if (i > 0) {
-            Com_Printf(", ");
+            Com_Printf("\n");
         }
-        Com_Printf("'%s'", com_consoleLines[i]);
+        Com_Printf("  '%s'", com_consoleLines[i]);
     }
     if (com_numConsoleLines == 0) {
         Com_Printf("''");
     }
     Com_Printf("\n");
-    
+}
+
+
+
+void common_printInfo() {
     Com_Printf("-----------------------------------\n");
     Com_Printf("CoD2x " APP_VERSION " loaded\n");
     Com_Printf("-----------------------------------\n");
 }
 
 
-void common_init() {
 
+
+/** Called once when hot-reloading is activated. */
+void common_unload() {
+    Cmd_RemoveCommand("cmdLine");
+}
+
+
+
+/** Called only once on game start after common inicialization. Used to initialize variables, cvars, etc. */
+void common_init() {
+    Cmd_AddCommand("cmdLine", cmd_commandLine);
 }
 
 

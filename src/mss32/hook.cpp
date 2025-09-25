@@ -76,7 +76,7 @@ void hook_Com_Frame()
             // Unloading
             hotreload_unload();
             debug_unload();
-
+            common_unload();
             radar_unload();
 
             hotreload_loadDLL();
