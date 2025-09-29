@@ -359,7 +359,7 @@ void radar_draw()
         centity_t* cent = &cg_entities[i];
         clientInfo_t* ci = &clientInfo[cent->currentState.clientNum];
 
-        if (cent->currentState.eType != ET_PLAYER || !(cent->currentValid & 1) || ci->infoValid != qtrue || ci->team >= TEAM_SPECTATOR)
+        if (cent->currentState.eType != ET_PLAYER || /*!(cent->currentValid & 1) ||*/ ci->infoValid != qtrue || ci->team >= TEAM_SPECTATOR)
             continue;
 
         if (ci->team == TEAM_ALLIES && alliesCount < 5) {
