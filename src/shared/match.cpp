@@ -507,7 +507,7 @@ void match_cmd() {
 
                 Dvar_SetString(Dvar_GetDvarByName("sv_mapRotation"), maprotation.c_str());
                 Dvar_SetString(Dvar_GetDvarByName("sv_mapRotationCurrent"), "");
-                Dvar_SetString(Dvar_GetDvarByName("g_gametype"), "sd");
+                //Dvar_SetString(Dvar_GetDvarByName("g_gametype"), "sd");
 
                 match.downloading = false;
                 match.loading = true;
