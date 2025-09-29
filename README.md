@@ -2,8 +2,14 @@
 ![alt text](images/cod2-window.png)
 
 CoD2x is a modification of Call of Duty 2. It is build on top of 1.3 version.
-
 It focuses on fixing bugs and adding new features to the game.
+
+⚠️ Disclaimer
+- The CoD2x patch is a community-made, unofficial modification for Call of Duty 2.
+- It is provided free of charge, “as is”, without any warranty of functionality or support.
+- You use it entirely at your own risk. The authors are not affiliated with Activision or Infinity Ward and take no responsibility for any issues or damages resulting from its use.
+- To use this patch, you must own a legitimate, original copy of Call of Duty 2 purchased from an official distributor.
+- This software may be terminated or withdrawn at any time
 
 # Version history
 - 2025-09-25 - 1.4.5.1-test.5 - *current testing*
@@ -322,13 +328,6 @@ It also runs patching process that modifies the game memory to fix some bugs and
 - [CoD4x_Server](https://github.com/callofduty4x/CoD4x_Server)
 - [zk_libcod](https://github.com/ibuddieat/zk_libcod)
 - [Enemy-Territory](https://github.com/id-Software/Enemy-Territory)
-
-
-
-## Support
-You can support this project by donating via PayPal:
-[![Donate with PayPal](images/paypal.png)](https://www.paypal.com/donate/?hosted_button_id=R59Y6UN9LJVXQ)
-
 
 
 # Logo
