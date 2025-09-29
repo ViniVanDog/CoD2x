@@ -100,6 +100,13 @@ void CG_DrawCrosshairNames() {
 }
 
 
+// Help web page removed, fixed crash when getting translations
+void Sys_DirectXFatalError() {
+    MessageBoxA(NULL, "DirectX(R) encountered an unrecoverable error.", "DirectX Error", MB_OK | MB_ICONERROR);
+    ExitProcess(-1);
+}
+
+
 
 /** Called every frame on frame start. */
 void drawing_frame() {
@@ -123,4 +130,7 @@ void drawing_patch() {
     patch_call(0x004c68e8, (unsigned int)CG_DrawCompassFriendlies);
     patch_call(0x004cbd36, (unsigned int)CG_DrawCrosshairNames);
     patch_call(0x004cbd6b, (unsigned int)CG_DrawCrosshairNames);
+
+    // Improve DirectX error message
+    patch_int32(0x0040fcf5 + 4, (unsigned int)Sys_DirectXFatalError);
 }
