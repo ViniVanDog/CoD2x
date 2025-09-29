@@ -14,8 +14,6 @@ HANDLE crash_watchdogThreadHandle = NULL;
 volatile DWORD freeze_lastHeartbeat = 0;   // Updated by the main thread
 volatile bool freeze_exitThread = false;
 
-#define com_errorEntered (*(int*)(0x00c28b2c))
-
 extern volatile int exception_processCrashed;
 extern volatile bool hotreload_requested;
 

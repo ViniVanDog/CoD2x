@@ -103,6 +103,7 @@ typedef struct {
     bool loading;
     bool activated;
     bool uploading;
+    bool uploadingError;
     bool canceling;
     bool allow_map_change; // allow map change for once
     char url[256]; // URL to the match server

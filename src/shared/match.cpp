@@ -107,6 +107,10 @@ bool match_upload_error(const char* error, const char* errorMessage) {
         return false;
     }
 
+    if (match.uploadingError) {
+        return false;
+    }
+
     // Create JSON data
     std::string json;
     json += "{\n";
@@ -115,9 +119,12 @@ bool match_upload_error(const char* error, const char* errorMessage) {
     json += "  \"errorMessage\": \"" + json_escape_string(errorMessage) + "\"\n";
     json += "}\n";
 
+    match.uploadingError = true;
+
     // Send POST request to URL
     match.httpClient->postJson(match.url, json.c_str(),
         [](const HttpClient::Response& res) {
+            match.uploadingError = false;
             if (res.status != 200 && res.status != 201) {
                 Com_Printf("Match error uploading failed, invalid status: %d\n%s\n", res.status, res.body.c_str());
                 return;
@@ -125,6 +132,7 @@ bool match_upload_error(const char* error, const char* errorMessage) {
             //Com_Printf("Match error uploading succeeded: %s\n", res.body.c_str());
         },
         [](const std::string& error) {
+            match.uploadingError = false;
             Com_Printf("Match error uploading failed: %s\n", error.c_str());
         }
     );
@@ -433,6 +441,7 @@ void match_cmd() {
         match.loading = false;
         match.activated = false;
         match.uploading = false;
+        match.uploadingError = false;
         match.canceling = false;
         match.httpClient = new HttpClient();
         match.start_time = time_utc_ms();
@@ -627,13 +636,19 @@ bool match_beforeMapChangeOrRestart(bool fromScript, bool bComplete, bool shutdo
         }*/
     }
 
+    // Upload error about server error
+    if (shutdown && com_errorEntered && com_last_error && com_last_error[0] != '\0') {
+        // If there was a fatal error, we cannot upload the match data, just cancel
+        match_upload_error("Server shutdown error", com_last_error);
+    }
+
     // Canceling because of finished match, /match cancel or server shutdown
     // GSC script had time to complete the score and upload the final results, so we just cancel
     if (match.canceling || shutdown) {
 
-        if (shutdown && match.uploading) {
+        if (shutdown && (match.uploading || match.uploadingError)) {
             // Since server is shutting down, Com_Frame is not called, so we need to poll here to process the pending match data upload
-            for(int i = 0; i < 10 && match.uploading; i++) {
+            for(int i = 0; i < 10 && (match.uploading || match.uploadingError); i++) {
                 match.httpClient->poll(100);
             }
         }
@@ -643,6 +658,7 @@ bool match_beforeMapChangeOrRestart(bool fromScript, bool bComplete, bool shutdo
 
         match.canceling = false;
         match.uploading = false;
+        match.uploadingError = false;
         match.activated = false;
         match.loading = false;
         match.downloading = false;
