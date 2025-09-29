@@ -214,7 +214,7 @@ bool match_parse_json_match_data(const char* json_str, MatchData* match_data) {
             return false;
         }
 
-        if (map_count >= MAX_MAPS) {
+        if (map_count > MAX_MAPS) {
             match_data->error = "Too many maps (max " STRINGIFY(MAX_MAPS) ")";
             return false;
         }
