@@ -50,6 +50,10 @@ float cg_hudRadarCalibrate_point1_worldY = 0;
 float cg_hudRadarCalibrate_point2_worldX = 0;
 float cg_hudRadarCalibrate_point2_worldY = 0;
 
+#define MAX_FIRE_EVENTS 128
+struct RadarFireEvent { float x, y, w, h, angle; int startTime; };
+static RadarFireEvent radarFireEvents[MAX_FIRE_EVENTS];
+
 
 void cg_hudRadarCalibrate() {
 
@@ -380,6 +384,30 @@ void radar_draw()
         }
     }
 
+    // Draw firing events
+    for (int i = 0; i < MAX_FIRE_EVENTS; ++i) {
+        RadarFireEvent& evt = radarFireEvents[i];
+        if (evt.startTime == 0)
+            continue;
+        int timeFiredDelta = cg.time - evt.startTime;
+        if (timeFiredDelta > 0 && timeFiredDelta < 1000) {
+            float fireScale = 4.0f;
+            float alpha = 1.0f - (timeFiredDelta / 1000.0f);
+            vec4_t fireColor = { 1, 0.5f, 0.5f, alpha };
+            CG_DrawRotatedPic(
+                evt.x - evt.w * fireScale / 2,
+                evt.y - evt.h * fireScale / 2,
+                evt.w * fireScale,
+                evt.h * fireScale,
+                horizontalAlign,
+                verticalAlign,
+                evt.angle,
+                fireColor,
+                CG_RegisterMaterialNoMip("radar_player_fire", MATERIAL_TYPE_DEFAULT)
+            );
+        }
+    }
+
     // Draw players
 	for(int i = 0; i < 64; i++ )
 	{
@@ -388,7 +416,6 @@ void radar_draw()
         compassWeaponFire_t* weaponFire = &cg.compassWeaponFireEndTime[i];
 
         static int weaponFireTimeEndTimeLast[64];
-        static int weaponFireTime[64];
 
 		if((
 			cent->currentState.eType == ET_PLAYER && 
@@ -426,16 +453,26 @@ void radar_draw()
             // Because lastTimeFired is fire time + weapon fire delay, we need to save current time to be able to calculate the delta
             if (weaponFireTimeEndTimeLast[i] != weaponFire->lastFireEndTime) {
                 weaponFireTimeEndTimeLast[i] = weaponFire->lastFireEndTime;
-                weaponFireTime[i] = cg.time;
+
+                // When player fires, add a new event or reuse an old one
+                // Find a free slot or reuse the oldest
+                int slot = -1;
+                for (int j = 0; j < MAX_FIRE_EVENTS; ++j) {
+                    if (radarFireEvents[j].startTime == 0 || cg.time - radarFireEvents[j].startTime > 1000) {
+                        slot = j;
+                        break;
+                    }
+                }
+                if (slot == -1) slot = 0; // fallback
+
+                radarFireEvents[slot].x = x;
+                radarFireEvents[slot].y = y;
+                radarFireEvents[slot].w = w;
+                radarFireEvents[slot].h = h;
+                radarFireEvents[slot].angle = playerRotation;
+                radarFireEvents[slot].startTime = cg.time;
             }
-            int timeFiredDelta = cg.time - weaponFireTime[i];
-            if (timeFiredDelta > 0 && timeFiredDelta < 500) {
-                float fireScale = 3;
-                float alpha = 1 - timeFiredDelta / 500.0f;
-                vec4_t fireColor = { 1, 0, 0, alpha };
-                CG_DrawRotatedPic(x - w*fireScale/2, y - h*fireScale/2, w*fireScale, h*fireScale, horizontalAlign, verticalAlign, playerRotation, 
-                    fireColor, CG_RegisterMaterialNoMip("radar_player_fire", MATERIAL_TYPE_DEFAULT));
-            }
+
             // Highlight of followed player
             if (cg.snap && i == cg.snap->ps.clientNum) {
                 float highlightScale = 1.8f;
