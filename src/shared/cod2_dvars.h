@@ -9,6 +9,7 @@
 #define sv_packet_info (*((dvar_s**)( ADDR(0x00d52858, 0x0849f798) )))
 #define net_lanauthorize (*((dvar_s**)( ADDR(0x00c8fb14, 0x081fa514) )))
 #define showpackets (*((dvar_s**)( ADDR(0x00c84ae8, 0x081fa500) )))
+#define dvars_count (*((int*)( ADDR(0x00c5c584, 0x085abe08) )))
 
 
 enum dvarFlags_e : uint16_t

@@ -28,6 +28,7 @@
 #include "../shared/iwd.h"
 #include "../shared/common.h"
 #include "../shared/server.h"
+#include "../shared/dvar.h"
 #include "../shared/game.h"
 #include "../shared/animation.h"
 #include "../shared/cod2_dvars.h"
@@ -208,6 +209,7 @@ void hook_SV_Init() {
     freeze_init();
     common_init();
     server_init();
+    dvar_init();
     updater_init();
     game_init();
     animation_init();
@@ -295,6 +297,7 @@ bool hook_patch() {
     common_patch();
     server_patch();
     game_patch();
+    dvar_patch();
     animation_patch();
     gsc_patch();
     iwd_patch();
@@ -326,12 +329,6 @@ bool hook_patch() {
     patch_string_ptr(0x004064c6 + 1, "CoD2x MP");
     patch_string_ptr(0x004064c1 + 1, APP_VERSION);
     patch_string_ptr(0x004064cb + 1, "%s: %s> ");
-
-
-    // Improve error message when too many dvars are registered
-    patch_string_ptr(0x00437e0f + 1, "Error while registering cvar '%s'.\nUnable to create more than %i dvars.\n\n"
-        "There is too many cvars in your config!\nClean your config from unused dvars and try again.\n\n"
-        "Normal config should contains no more than 400 lines of dvars. Compare your config with a default one to find the differences.");
 
 
     // Fix console not closing when fatal error occured for server

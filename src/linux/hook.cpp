@@ -7,6 +7,7 @@
 #include "../shared/cod2_common.h"
 #include "../shared/common.h"
 #include "../shared/server.h"
+#include "../shared/dvar.h"
 #include "../shared/game.h"
 #include "../shared/animation.h"
 #include "../shared/gsc.h"
@@ -42,6 +43,7 @@ void hook_SV_Init() {
     // Shared & Server
     common_init();
     server_init();
+    dvar_init();
     updater_init();
     game_init();
     animation_init();
@@ -86,6 +88,7 @@ bool hook_patch() {
     common_patch();
     server_patch();
     game_patch();
+    dvar_patch();
     updater_patch();
     animation_patch();
     gsc_patch();
